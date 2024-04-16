@@ -174,12 +174,11 @@ class _CadastroScreenState extends State<CadastroScreen> {
               ),Center(
                 child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green, // Cor do botão
+                    backgroundColor: Colors.green, 
                     ),
                     onPressed: () {
                     if (_formKey.currentState!.validate()) {
                         // Formulário validado com sucesso, continuar com o registro
-                        // Adicione sua lógica de registro de usuário aqui
                         _mostrarDialogoSucesso();
                     }
                     },
