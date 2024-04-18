@@ -14,13 +14,13 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.green,
       ),
-      home: const MyHomePage(),
+      home: const MyHomePage2(),
     );
   }
 }
 
-class MyHomePage extends StatelessWidget {
-  const MyHomePage({super.key});
+class MyHomePage2 extends StatelessWidget {
+  const MyHomePage2({super.key});
 
   @override
   Widget build(BuildContext context) {

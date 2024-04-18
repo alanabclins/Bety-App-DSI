@@ -1,4 +1,6 @@
+import 'package:bety_app/screens/cadastro_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:bety_app/screens/home.dart';
 
 void main() {
   runApp(const MaterialApp(
@@ -78,6 +80,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   foregroundColor: const Color.fromARGB(255, 255, 255, 255),
                 ),
                 onPressed: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => const MyHomePage2()));
                   if (_formKey.currentState!.validate()) {
                     // Adicione a função de login aqui
                   }
@@ -87,7 +90,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 20.0),
               TextButton(
                 onPressed:
-                    () {}, // Adicione a função de navegação para a tela de registro aqui
+                    () { Navigator.push(context, MaterialPageRoute(builder: (context) => const CadastroScreen()));}, // Adicione a função de navegação para a tela de registro aqui
                 child: const Text('para se cadastrar, clique aqui!'),
               ),
             ],
