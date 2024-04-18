@@ -99,6 +99,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
       ),
+      resizeToAvoidBottomInset: false
     );
   }
 }

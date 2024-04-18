@@ -190,6 +190,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
           ),
         ),
       ),
+      resizeToAvoidBottomInset: false
     );
   }
 
