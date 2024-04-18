@@ -51,6 +51,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   if (value == null || value.isEmpty) {
                     return 'Campo obrigatório';
                   }
+                  if (!value.contains('@')) {
+                    return 'E-mail inválido';
+                  }
                   return null;
                 },
               ),
@@ -80,9 +83,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   foregroundColor: const Color.fromARGB(255, 255, 255, 255),
                 ),
                 onPressed: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const MyHomePage2()));
                   if (_formKey.currentState!.validate()) {
-                    // Adicione a função de login aqui
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => const MyHomePage2()));
                   }
                 },
                 child: const Text('entrar'),
