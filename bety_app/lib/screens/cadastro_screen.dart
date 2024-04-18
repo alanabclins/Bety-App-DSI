@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:bety_app/screens/home.dart';
 
 void main() {
   runApp(const MaterialApp(
@@ -202,7 +203,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
           actions: <Widget>[
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop();
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const MyHomePage2()));;
               },
               child: const Text('OK'),
             ),

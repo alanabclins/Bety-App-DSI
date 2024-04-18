@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'Screens/login.dart';
+import 'screens/login.dart';
 import 'screens/home.dart';
+import 'screens/cadastro_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -36,9 +37,11 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: '/login',
       routes: {
+        '/home': (context) => const MyHomePage2(),
+        '/cadastro_screen': (context) => const CadastroScreen(),
         '/login': (context) => const LoginScreen()
       },
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyHomePage2(),
     );
   }
 }
