@@ -1,6 +1,6 @@
 {
-    "name": "bety_app",
-    "short_name": "bety_app",
+    "name": "bety_sprint1",
+    "short_name": "bety_sprint1",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

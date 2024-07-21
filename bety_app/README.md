@@ -1,4 +1,4 @@
-# bety_app
+# bety_sprint1
 
 A new Flutter project.
 

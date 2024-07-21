@@ -1,216 +1,225 @@
 import 'package:flutter/material.dart';
-import 'package:bety_app/screens/home.dart';
-
-void main() {
-  runApp(const MaterialApp(
-    home: CadastroScreen(),
-  ));
-}
 
 class CadastroScreen extends StatefulWidget {
-  const CadastroScreen({Key? key}) : super(key: key);
+  const CadastroScreen({super.key});
 
   @override
-  State<CadastroScreen> createState() => _CadastroScreenState();
+  _CadastroScreenState createState() => _CadastroScreenState();
 }
 
 class _CadastroScreenState extends State<CadastroScreen> {
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _senhaController = TextEditingController();
+  final TextEditingController _confirmaSenhaController =
+      TextEditingController();
+  final TextEditingController _nomeController = TextEditingController();
+  final TextEditingController _dataNascimentoController =
+      TextEditingController();
+  final TextEditingController _tipoDiabetesController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  final _nomeController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _senhaController = TextEditingController();
-  final _confirmarSenhaController = TextEditingController();
-  String? _tipoUsuario;
-  DateTime? _dataNascimento;
+  bool _isPaciente = false;
+  bool _isCuidador = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Bety'),
-        backgroundColor: Colors.green[900],
+        title: const Text('Cadastro'),
+        backgroundColor: const Color.fromARGB(255, 11, 171, 124),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              TextFormField(
-                controller: _nomeController,
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: Colors.lightGreen[100],
-                  hintText: 'Digite seu nome completo',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                  ),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Campo obrigatório';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 10.0),
-              TextFormField(
-                controller: _emailController,
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: Colors.lightGreen[100],
-                  hintText: 'Digite seu e-mail',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                  ),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Campo obrigatório';
-                  }
-                  if (!value.contains('@')) {
-                    return 'E-mail inválido';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 10.0),
-              TextFormField(
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: Colors.lightGreen[100],
-                  hintText: 'Data de nascimento',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                  ),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Campo obrigatório';
-                  }
-                  try {
-                    final date = DateTime.parse(value);
-                    if (date.year >= 2024) {
-                      return 'Data de nascimento inválida';
-                    }
-                  } catch (e) {
-                    return 'Formato de data inválido';
-                  }
-                  return null;
-                },
-                onTap: () async {
-                  final date = await showDatePicker(
-                    context: context,
-                    initialDate: DateTime.now(),
-                    firstDate: DateTime(1900),
-                    lastDate: DateTime(2023),
-                  );
-                  if (date != null) {
-                    setState(() {
-                      _dataNascimento = date;
-                    });
-                  }
-                },
-                readOnly: false,
-                controller: TextEditingController(
-                  text: _dataNascimento != null
-                      ? '${_dataNascimento!.day}/${_dataNascimento!.month}/${_dataNascimento!.year}'
-                      : '',
-                ),
-              ),
-              const SizedBox(height: 10.0),
-              TextFormField(
-                controller: _senhaController,
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: Colors.lightGreen[100],
-                  hintText: 'Digite sua senha',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                  ),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Campo obrigatório';
-                  }
-                  if (_confirmarSenhaController.text != value) {
-                    return 'As senhas não coincidem';
-                  }
-                  return null;
-                },
-                obscureText: true,
-              ),
-              const SizedBox(height: 10.0),
-              TextFormField(
-                controller: _confirmarSenhaController,
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: Colors.lightGreen[100],
-                  hintText: 'Confirme sua senha',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                  ),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Campo obrigatório';
-                  }
-                  if (_senhaController.text != value) {
-                    return 'As senhas não coincidem';
-                  }
-                  return null;
-                },
-                obscureText: true,
-              ),
-              const SizedBox(height: 10.0),
-              CheckboxListTile(
-                title: const Text('Sou cuidador'),
-                value: _tipoUsuario == 'cuidador',
-                onChanged: (value) {
-                  setState(() {
-                    _tipoUsuario = value! ? 'cuidador' : 'paciente';
-                  });
-                },
-              ),Center(
-                child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green, 
+      body: Container(
+        color: const Color.fromARGB(255, 251, 250, 243),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(30),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 20),
+                TextFormField(
+                  controller: _nomeController,
+                  decoration: InputDecoration(
+                    labelText: "Seu nome",
+                    filled: true,
+                    fillColor: const Color.fromARGB(255, 199, 244, 194),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                        // Formulário validado com sucesso, continuar com o registro
-                        _mostrarDialogoSucesso();
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Por favor, insira seu nome';
                     }
-                    },
-                    child: const Text('Finalizar cadastro'),
+                    return null;
+                  },
                 ),
-              ),
-            ],
+                const SizedBox(height: 20),
+                TextFormField(
+                  controller: _emailController,
+                  decoration: InputDecoration(
+                    labelText: "Seu email",
+                    filled: true,
+                    fillColor: const Color.fromARGB(255, 199, 244, 194),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Por favor, insira seu email';
+                    }
+                    if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+                      return 'Por favor, insira um email válido';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 20),
+                TextFormField(
+                  keyboardType: TextInputType.visiblePassword,
+                  obscureText: true,
+                  obscuringCharacter: "*",
+                  controller: _senhaController,
+                  decoration: InputDecoration(
+                    labelText: "Sua senha",
+                    suffixIconColor: const Color.fromARGB(255, 11, 171, 124),
+                    suffixIcon: const Icon(Icons.remove_red_eye),
+                    filled: true,
+                    fillColor: const Color.fromARGB(255, 199, 244, 194),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Por favor, insira sua senha';
+                    }
+                    if (value.length < 6) {
+                      return 'A senha deve ter pelo menos 6 caracteres';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 20),
+                TextFormField(
+                  keyboardType: TextInputType.visiblePassword,
+                  obscureText: true,
+                  obscuringCharacter: "*",
+                  controller: _confirmaSenhaController,
+                  decoration: InputDecoration(
+                    labelText: "Confirme sua senha",
+                    suffixIconColor: const Color.fromARGB(255, 11, 171, 124),
+                    suffixIcon: const Icon(Icons.remove_red_eye),
+                    filled: true,
+                    fillColor: const Color.fromARGB(255, 199, 244, 194),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Por favor, confirme sua senha';
+                    }
+                    if (value != _senhaController.text) {
+                      return 'As senhas não coincidem';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 20),
+                TextFormField(
+                  controller: _dataNascimentoController,
+                  decoration: InputDecoration(
+                    labelText: "Data de Nascimento",
+                    filled: true,
+                    fillColor: const Color.fromARGB(255, 199, 244, 194),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Por favor, insira sua data de nascimento';
+                    }
+                    // Aqui você pode adicionar validação de formato de data
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 20),
+                TextFormField(
+                  controller: _tipoDiabetesController,
+                  decoration: InputDecoration(
+                    labelText: "Tipo de Diabetes",
+                    filled: true,
+                    fillColor: const Color.fromARGB(255, 199, 244, 194),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Por favor, insira o tipo de diabetes';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 20),
+                CheckboxListTile(
+                  title: const Text("Paciente"),
+                  value: _isPaciente,
+                  onChanged: (value) {
+                    setState(() {
+                      _isPaciente = value ?? false;
+                      if (_isPaciente) {
+                        _isCuidador = false;
+                      }
+                    });
+                  },
+                ),
+                CheckboxListTile(
+                  title: const Text("Cuidador"),
+                  value: _isCuidador,
+                  onChanged: (value) {
+                    setState(() {
+                      _isCuidador = value ?? false;
+                      if (_isCuidador) {
+                        _isPaciente = false;
+                      }
+                    });
+                  },
+                ),
+                const SizedBox(height: 35),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      if (_formKey.currentState!.validate()) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('Cadastro realizado com sucesso')),
+                        );
+                        // Aqui você pode adicionar o código para cadastrar o usuário
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.all(15),
+                      textStyle: const TextStyle(fontSize: 20),
+                      foregroundColor: const Color.fromARGB(255, 199, 244, 194),
+                      backgroundColor: const Color.fromARGB(255, 11, 171, 124),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Text('Cadastrar'),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
-      resizeToAvoidBottomInset: false
-    );
-  }
-
-   void _mostrarDialogoSucesso() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Sucesso!'),
-          content: const Text('Sua conta foi ativada com sucesso.'),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const MyHomePage2()));;
-              },
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
     );
   }
 }
