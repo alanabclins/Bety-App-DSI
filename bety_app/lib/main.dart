@@ -1,6 +1,7 @@
 //import 'package:bety_sprint1/screens/login_screen.dart';
 //import 'package:bety_sprint1/screens/cadastro_screen.dart';
 import 'package:bety_sprint1/screens/login_screen.dart';
+import 'package:bety_sprint1/screens/notificacao_screen.dart';
 //import 'package:bety_sprint1/screens/registro_glicemia.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -30,7 +31,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         fontFamily: 'Poppins',
       ),
-      home: NotificacaoScreen(),
+      home: LoginScreen(),
     );
   }
 }
