@@ -5,8 +5,14 @@ class NotificacaoScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Notificações'),
-        backgroundColor: Color.fromARGB(255, 11, 171, 124),
+        title: Text(
+          'Notificações',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: Color(0xFF0BAB7C),
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () {
@@ -19,20 +25,52 @@ class NotificacaoScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Exemplos de balões de notificação aqui
             Card(
-              color: Colors.green,
+              color: Color.fromARGB(255, 199, 244, 194),
               child: ListTile(
-                title: Text('Lembre-se de tomar o medicamento X'),
+                title: Text('Se atente ao tomar o remédio X'),
               ),
             ),
             Card(
-              color: Colors.green,
+              color: Color.fromARGB(255, 199, 244, 194),
               child: ListTile(
-                title: Text('Verifique seus níveis de glicose'),
+                title: Text('Está na hora de aplicar sua insulina'),
               ),
             ),
-            // Mais exemplos de notificações
+            Card(
+              color: Color.fromARGB(255, 199, 244, 194),
+              child: ListTile(
+                title: Text('Já chegou seu nível de glicose?'),
+              ),
+            ),
+            Card(
+              color: Color.fromARGB(255, 199, 244, 194),
+              child: ListTile(
+                title: Text('Está na hora de tomar o remédio X'),
+              ),
+            ),
+            SizedBox(height: 20), // Espaço antes do botão
+            ElevatedButton(
+              onPressed: () {
+                // Ação do botão
+                Navigator.pop(context); // Exemplo de ação: voltar à tela anterior
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color(0xFF0BAB7C), // Cor do botão
+                padding: EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Text(
+                'Voltar',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ),
           ],
         ),
       ),
