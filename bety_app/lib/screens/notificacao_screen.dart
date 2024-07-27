@@ -52,8 +52,8 @@ class NotificacaoScreen extends StatelessWidget {
             SizedBox(height: 20), // Espaço antes do botão
             ElevatedButton(
               onPressed: () {
-                // Ação do botão
-                Navigator.pop(context); // Exemplo de ação: voltar à tela anterior
+                // Ação do botão 
+                Navigator.pop(context);// Exemplo de ação: voltar à tela anterior
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Color(0xFF0BAB7C), // Cor do botão
