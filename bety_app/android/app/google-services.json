@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "874801429318",
+    "project_id": "bety-dsi",
+    "storage_bucket": "bety-dsi.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:874801429318:android:f69da8a71074a6a9610347",
+        "android_client_info": {
+          "package_name": "com.example.bety_sprint1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBaJqyOSlQp-YstbWtysLz6XOhGyCXSYo4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
