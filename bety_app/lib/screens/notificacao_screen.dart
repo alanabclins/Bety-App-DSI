@@ -1,6 +1,31 @@
 import 'package:flutter/material.dart';
+import '../notification_service.dart';
+import 'package:provider/provider.dart';
 
-class NotificacaoScreen extends StatelessWidget {
+class NotificacaoScreen extends StatefulWidget {
+  @override
+  _NotificacaoScreenState createState() => _NotificacaoScreenState();
+}
+
+class _NotificacaoScreenState extends State<NotificacaoScreen> {
+  bool valor = false; // Variável para controlar botao
+  void showNotification() {
+  setState(() {
+    valor = !valor;
+    if (valor) {
+      Provider.of<NotificationService>(context, listen: false).showNotification(
+        CustomNotification(
+          id: 1,
+          title: 'Teste',
+          body: 'Acesse o app!',
+          payload: '',
+        ),
+      );
+    }
+  });
+}
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -16,7 +41,7 @@ class NotificacaoScreen extends StatelessWidget {
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () {
-            // Navegue de volta à tela inicial aqui
+            Navigator.pop(context); // Voltar pra tela anterior
           },
         ),
       ),
@@ -49,11 +74,12 @@ class NotificacaoScreen extends StatelessWidget {
                 title: Text('Está na hora de tomar o remédio X'),
               ),
             ),
-            SizedBox(height: 20), // Espaço antes do botão
+            SizedBox(height: 20), 
             ElevatedButton(
               onPressed: () {
-                // Ação do botão 
-                Navigator.pop(context);// Exemplo de ação: voltar à tela anterior
+                setState(() {
+                  valor = !valor; // Alternar o valor do checkbox
+                });
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Color(0xFF0BAB7C), // Cor do botão
@@ -62,13 +88,12 @@ class NotificacaoScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: Text(
-                'Voltar',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
+              child: ListTile(
+              title: const Text('Lembrar-me mais tarde'),
+              trailing: valor
+                  ? Icon(Icons.check_box, color: Colors.amber.shade600)
+                  : const Icon(Icons.check_box_outline_blank),
+              onTap: showNotification,
               ),
             ),
           ],
