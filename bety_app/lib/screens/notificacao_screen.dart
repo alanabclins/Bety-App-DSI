@@ -9,18 +9,13 @@ class NotificacaoScreen extends StatefulWidget {
 
 class _NotificacaoScreenState extends State<NotificacaoScreen> {
   bool valor = false; // Variável para controlar botao
-  void showNotification() {
+  void showNotificatio() {
   setState(() {
     valor = !valor;
     if (valor) {
-      Provider.of<NotificationService>(context, listen: false).showNotification(
-        CustomNotification(
-          id: 1,
-          title: 'Teste',
-          body: 'Acesse o app!',
-          payload: '',
-        ),
-      );
+     final notificacao = new NotificationService();
+     final custom = new CustomNotification(id:1, title: "a", body: "aaa", payload: "/");
+     notificacao.showNotification(custom);
     }
   });
 }
@@ -93,7 +88,7 @@ class _NotificacaoScreenState extends State<NotificacaoScreen> {
               trailing: valor
                   ? Icon(Icons.check_box, color: Colors.amber.shade600)
                   : const Icon(Icons.check_box_outline_blank),
-              onTap: showNotification,
+              onTap: showNotificatio,
               ),
             ),
           ],

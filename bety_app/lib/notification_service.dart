@@ -21,14 +21,13 @@ class CustomNotification {
 class NotificationService {
   late FlutterLocalNotificationsPlugin localNotificationsPlugin;
   late AndroidNotificationDetails androidDetails;
-  late IOSNotificationDetails iosDetails;
-  late MacOSNotificationDetails macOSDetails;
+  late DarwinNotificationDetails iosDetails; // Usando DarwinNotificationDetails
+
 
   NotificationService() {
     localNotificationsPlugin = FlutterLocalNotificationsPlugin();
     _setupAndroidDetails();
     _setupIOSDetails();
-    _setupMacOSDetails();
     _setupNotifications();
   }
 
@@ -44,7 +43,7 @@ class NotificationService {
   }
 
   void _setupIOSDetails() {
-    iosDetails = const IOSNotificationDetails(
+    iosDetails = const DarwinNotificationDetails( // Usando DarwinNotificationDetails
       sound: 'default', // Som de notificação padrão
       presentAlert: true,
       presentBadge: true,
@@ -52,14 +51,7 @@ class NotificationService {
     );
   }
 
-  void _setupMacOSDetails() {
-    macOSDetails = const MacOSNotificationDetails(
-      sound: 'default', // Som de notificação padrão
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: true,
-    );
-  }
+
 
   Future<void> _setupNotifications() async {
     await _setupTimezone();
@@ -76,23 +68,19 @@ class NotificationService {
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
 
     // Configuração específica para iOS
-    final IOSInitializationSettings ios = IOSInitializationSettings(
-      onDidReceiveLocalNotification: _onDidReceiveLocalNotification,
-    );
+    final DarwinInitializationSettings ios = DarwinInitializationSettings(); // Usando DarwinInitializationSettings
 
-    // Configuração específica para macOS
-    final MacOSInitializationSettings macOS = MacOSInitializationSettings();
+  
 
     // Inicialização com suporte para Android, iOS e macOS
     final initializationSettings = InitializationSettings(
       android: android,
       iOS: ios,
-      macOS: macOS,
     );
 
     await localNotificationsPlugin.initialize(
       initializationSettings,
-      onSelectNotification: _onSelectNotification,
+      // onSelectNotification: _onSelectNotification,
     );
   }
 
@@ -103,17 +91,6 @@ class NotificationService {
     }
   }
 
-  Future<void> _onDidReceiveLocalNotification(
-    int id,
-    String? title,
-    String? body,
-    String? payload,
-  ) async {
-    // Implemente o que você deseja fazer quando a notificação for recebida
-    // enquanto o aplicativo está em primeiro plano
-    // Exemplo: Mostre um diálogo ou navegue para uma tela específica
-  }
-
   Future<void> showNotification(CustomNotification notification) async {
     await localNotificationsPlugin.show(
       notification.id,
@@ -122,22 +99,17 @@ class NotificationService {
       NotificationDetails(
         android: androidDetails,
         iOS: iosDetails,
-        macOS: macOSDetails,
         // Adicione detalhes para outras plataformas aqui
       ),
       payload: notification.payload,
     );
   }
 
-  Future<void> showLocalNotification(CustomNotification notification) async {
-    await showNotification(notification);
-  }
-
   Future<void> checkForNotifications() async {
     final details =
         await localNotificationsPlugin.getNotificationAppLaunchDetails();
     if (details != null && details.didNotificationLaunchApp) {
-      await _onSelectNotification(details.payload);
+     //  await _onSelectNotification(details.payload);
     }
   }
 }
