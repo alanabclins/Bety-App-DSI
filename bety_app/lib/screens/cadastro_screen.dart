@@ -1,3 +1,4 @@
+import 'package:bety_sprint1/services/auth_service.dart';
 import 'package:flutter/material.dart';
 
 class CadastroScreen extends StatefulWidget {
@@ -19,6 +20,8 @@ class _CadastroScreenState extends State<CadastroScreen> {
   final _formKey = GlobalKey<FormState>();
   bool _isPaciente = false;
   bool _isCuidador = false;
+
+  final AuthService _authService = AuthService();
 
   @override
   Widget build(BuildContext context) {
@@ -142,7 +145,6 @@ class _CadastroScreenState extends State<CadastroScreen> {
                     if (value == null || value.isEmpty) {
                       return 'Por favor, insira sua data de nascimento';
                     }
-                    // Aqui você pode adicionar validação de formato de data
                     return null;
                   },
                 ),
@@ -194,13 +196,30 @@ class _CadastroScreenState extends State<CadastroScreen> {
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
                       if (_formKey.currentState!.validate()) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text('Cadastro realizado com sucesso')),
+                        String? result = await _authService.cadastrarUsuario(
+                          email: _emailController.text,
+                          senha: _senhaController.text,
+                          nome: _nomeController.text,
+                          dataNascimento: _dataNascimentoController.text,
+                          tipoDiabetes: _tipoDiabetesController.text,
+                          isPaciente: _isPaciente,
                         );
-                        // Aqui você pode adicionar o código para cadastrar o usuário
+
+                        if (result == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Cadastro realizado com sucesso'),
+                            ),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Erro: $result'),
+                            ),
+                          );
+                        }
                       }
                     },
                     style: ElevatedButton.styleFrom(

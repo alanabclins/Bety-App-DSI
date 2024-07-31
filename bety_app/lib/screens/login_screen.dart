@@ -1,12 +1,16 @@
 import 'package:bety_sprint1/screens/cadastro_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-//import 'CadastroScreen.dart'; // Importe a tela de cadastro
+import 'package:bety_sprint1/services/auth_service.dart';
+import 'home_screen.dart';
 
 class LoginScreen extends StatelessWidget {
   LoginScreen({super.key});
+
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _senhaController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  final AuthService _authService = AuthService();
 
   @override
   Widget build(BuildContext context) {
@@ -89,12 +93,37 @@ class LoginScreen extends StatelessWidget {
                       width: double.infinity,
                       height: 50,
                       child: ElevatedButton(
-                        onPressed: () {
+                        onPressed: () async {
                           if (_formKey.currentState!.validate()) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                  content: Text('Processando dados')),
+                            String? result = await _authService.entrarUsuario(
+                              email: _emailController.text,
+                              senha: _senhaController.text,
                             );
+
+                            if (result == null) {
+                              User? user = FirebaseAuth.instance.currentUser;
+                              if (user != null) {
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        HomeScreen(user: user),
+                                  ),
+                                );
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Erro ao obter usuário'),
+                                  ),
+                                );
+                              }
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Erro: $result'),
+                                ),
+                              );
+                            }
                           }
                         },
                         style: ElevatedButton.styleFrom(
@@ -113,19 +142,22 @@ class LoginScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 10),
                     TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => CadastroScreen()),
-                          );
-                        },
-                        child: const Text(
-                          "para se cadastrar clique aqui",
-                          style: TextStyle(
-                              decoration: TextDecoration.underline,
-                              color: Color.fromARGB(255, 11, 171, 124)),
-                        )),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const CadastroScreen(),
+                          ),
+                        );
+                      },
+                      child: const Text(
+                        "para se cadastrar clique aqui",
+                        style: TextStyle(
+                          decoration: TextDecoration.underline,
+                          color: Color.fromARGB(255, 11, 171, 124),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
