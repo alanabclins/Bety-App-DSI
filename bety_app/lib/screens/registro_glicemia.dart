@@ -1,3 +1,4 @@
+import 'package:bety_sprint1/utils/custom_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -52,38 +53,13 @@ class _MedicaoGlicoseScreenState extends State<MedicaoGlicoseScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(120.0),
-        child: AppBar(
-          backgroundColor: Colors.green,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(
-              bottom: Radius.circular(16),
-            ),
-          ),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () {
-              Navigator.pop(context);
-            },
-          ),
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Glicemia',
-                style: TextStyle(fontSize: 18),
-              ),
-              const Spacer(),
-              const Text(
-                'Bety',
-                style: TextStyle(fontSize: 22),
-              ),
-              const Spacer(),
-            ],
-          ),
-          titleSpacing: 0,
-        ),
+      appBar: CustomAppBar(
+        mainTitle: 'Registro de Glicemia',
+        subtitle: 'Registre suas medições de glicemia!',
+        showLogoutButton: false,
+        onBackButtonPressed: () {
+          Navigator.pushNamed(context, '/home');
+        },
       ),
       body: Column(
         children: [
@@ -104,7 +80,7 @@ class _MedicaoGlicoseScreenState extends State<MedicaoGlicoseScreen> {
             ),
           ),
           Expanded(
-            child: ConstrainedBox(
+              child: ConstrainedBox(
             constraints: BoxConstraints(maxWidth: 600),
             child: ListView.builder(
               itemCount: _filteredRecords().length,
@@ -112,12 +88,13 @@ class _MedicaoGlicoseScreenState extends State<MedicaoGlicoseScreen> {
                 final record = _filteredRecords()[index];
                 return Card(
                   shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10.0),
+                    borderRadius: BorderRadius.circular(10.0),
                   ),
                   margin: const EdgeInsets.all(8.0),
                   color: Colors.lightGreen[100],
                   child: Padding(
-                    padding: const  EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0, vertical: 24.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -135,13 +112,16 @@ class _MedicaoGlicoseScreenState extends State<MedicaoGlicoseScreen> {
                                 style: TextStyle(color: Colors.white),
                               ),
                             ),
-                            Text('Medição realizada às ${record['time']}',
+                            Text(
+                              'Medição realizada às ${record['time']}',
                               style: TextStyle(
                                 fontFamily: 'Poppins',
                                 fontSize: 14.4,
                                 fontWeight: FontWeight.w700,
-                                height: 17.28 / 14.4, // line-height divided by font-size
-                                textBaseline: TextBaseline.alphabetic,),
+                                height: 17.28 /
+                                    14.4, // line-height divided by font-size
+                                textBaseline: TextBaseline.alphabetic,
+                              ),
                             ),
                             IconButton(
                               icon: const Icon(Icons.close),
@@ -152,7 +132,7 @@ class _MedicaoGlicoseScreenState extends State<MedicaoGlicoseScreen> {
                         const SizedBox(height: 16),
                         Text(
                             'Concentração de glicose: ${record['glucose']} mg/dL'),
-                        const SizedBox(height: 8),    
+                        const SizedBox(height: 8),
                         Text('Tipo de medição: ${record['measurementType']}'),
                       ],
                     ),
@@ -160,8 +140,8 @@ class _MedicaoGlicoseScreenState extends State<MedicaoGlicoseScreen> {
                 );
               },
             ),
-            ) // contrained fecha aqui
-          ),
+          ) // contrained fecha aqui
+              ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -174,7 +154,8 @@ class _MedicaoGlicoseScreenState extends State<MedicaoGlicoseScreen> {
           );
         },
         child: const Icon(Icons.add),
-        backgroundColor: Colors.green,
+        backgroundColor: Color(0xFF0BAB7C),
+        foregroundColor: Colors.white,
       ),
     );
   }
@@ -224,7 +205,8 @@ class _AddRecordDialogState extends State<AddRecordDialog> {
     );
     if (picked != null) {
       final now = DateTime.now();
-      final formattedTime = DateFormat('HH:mm').format(DateTime(now.year, now.month, now.day, picked.hour, picked.minute));
+      final formattedTime = DateFormat('HH:mm').format(
+          DateTime(now.year, now.month, now.day, picked.hour, picked.minute));
       setState(() {
         _timeController.text = formattedTime;
       });
@@ -255,40 +237,40 @@ class _AddRecordDialogState extends State<AddRecordDialog> {
             TextFormField(
               controller: _dateController,
               decoration: InputDecoration(
-              labelText: 'Data',
-              suffixIcon: IconButton(
-                icon: Icon(Icons.calendar_today),
-                onPressed: () {
-                  _selectDate(context);
-                },
+                labelText: 'Data',
+                suffixIcon: IconButton(
+                  icon: Icon(Icons.calendar_today),
+                  onPressed: () {
+                    _selectDate(context);
+                  },
+                ),
               ),
-            ),
-            readOnly: true,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Por favor, insira a data';
-              }
-              return null;
-            },
+              readOnly: true,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Por favor, insira a data';
+                }
+                return null;
+              },
             ),
             TextFormField(
               controller: _timeController,
               decoration: InputDecoration(
-              labelText: 'Hora',
-              suffixIcon: IconButton(
-                icon: Icon(Icons.access_time),
-                onPressed: () {
-                  _selectTime(context);
-                },
+                labelText: 'Hora',
+                suffixIcon: IconButton(
+                  icon: Icon(Icons.access_time),
+                  onPressed: () {
+                    _selectTime(context);
+                  },
+                ),
               ),
-            ),
-            readOnly: true,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Por favor, insira a hora';
-              }
-              return null;
-            },
+              readOnly: true,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Por favor, insira a hora';
+                }
+                return null;
+              },
             ),
             TextFormField(
               controller: _glucoseController,

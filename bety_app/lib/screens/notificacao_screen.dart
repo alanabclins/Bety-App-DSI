@@ -1,24 +1,17 @@
+import 'package:bety_sprint1/utils/custom_app_bar.dart';
 import 'package:flutter/material.dart';
 
 class NotificacaoScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Notificações',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: Color(0xFF0BAB7C),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () {
-            // Navegue de volta à tela inicial aqui
-          },
-        ),
+      appBar: CustomAppBar(
+        mainTitle: 'Notificação',
+        subtitle: 'Se atente às suas notificações!',
+        showLogoutButton: false,
+        onBackButtonPressed: () {
+          Navigator.pushNamed(context, '/home');
+        },
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16),
@@ -52,8 +45,9 @@ class NotificacaoScreen extends StatelessWidget {
             SizedBox(height: 20), // Espaço antes do botão
             ElevatedButton(
               onPressed: () {
-                // Ação do botão 
-                Navigator.pop(context);// Exemplo de ação: voltar à tela anterior
+                // Ação do botão
+                Navigator.pop(
+                    context); // Exemplo de ação: voltar à tela anterior
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Color(0xFF0BAB7C), // Cor do botão

@@ -5,11 +5,10 @@ import 'package:bety_sprint1/utils/custom_app_bar.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-
 class ProfileScreen extends StatelessWidget {
   final User user;
 
-  const ProfileScreen({super.key, required this.user});
+  const ProfileScreen(uid, {super.key, required this.user});
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +20,7 @@ class ProfileScreen extends StatelessWidget {
         subtitle: 'Configure seu perfil',
         showLogoutButton: true,
         onBackButtonPressed: () {
-          // Implementar ação para voltar
+          Navigator.pushNamed(context, '/home');
         },
       ),
       body: FutureBuilder<DocumentSnapshot>(
@@ -47,7 +46,8 @@ class ProfileScreen extends StatelessWidget {
               SizedBox(height: 20),
               CircleAvatar(
                 radius: 50,
-                backgroundImage: NetworkImage(userData['profile_image_url'] ?? 'https://example.com/default.jpg'),
+                backgroundImage: NetworkImage(userData['profile_image_url'] ??
+                    'https://example.com/default.jpg'),
               ),
               SizedBox(height: 20),
               Text(
@@ -75,7 +75,8 @@ class ProfileScreen extends StatelessWidget {
                     ),
                     ProfileDetailRow(
                       label: 'Data de nascimento:',
-                      value: userData['dataNascimento'] ?? 'Data não disponível',
+                      value:
+                          userData['dataNascimento'] ?? 'Data não disponível',
                     ),
                     ProfileDetailRow(
                       label: 'Email:',
@@ -106,7 +107,6 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 }
-
 
 class ProfileDetailRow extends StatelessWidget {
   final String label;

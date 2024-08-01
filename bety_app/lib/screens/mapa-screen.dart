@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:bety_sprint1/utils/custom_app_bar.dart';
 
-void main() {
-  runApp(MyApp());
-}
-
-class MyApp extends StatelessWidget {
+class MapaScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Flutter Map Demo',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.green,
       ),
@@ -31,35 +29,17 @@ class _HelpPointPageState extends State<HelpPointPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Ponto de ajuda'),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () {
-            // Navegar de volta
-          },
-        ),
+      appBar: CustomAppBar(
+        mainTitle: 'Mapa',
+        subtitle: 'Ponto de ajuda',
+        showLogoutButton: false,
+        onBackButtonPressed: () {
+          //TO DO: Implementar ação para voltar
+          Navigator.pushNamed(context, '/home');
+        },
       ),
       body: Column(
         children: [
-          Container(
-            color: Colors.green,
-            width: double.infinity,
-            padding: EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Bety',
-                  style: TextStyle(color: Colors.white, fontSize: 24.0, fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  'Ponto de ajuda',
-                  style: TextStyle(color: Colors.white, fontSize: 16.0),
-                ),
-              ],
-            ),
-          ),
           SizedBox(height: 10.0),
           Text(
             'Informações pessoais',
@@ -79,7 +59,8 @@ class _HelpPointPageState extends State<HelpPointPage> {
               ),
               children: [
                 TileLayer(
-                  urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  urlTemplate:
+                      'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
                   subdomains: ['a', 'b', 'c'],
                 ),
                 MarkerLayer(
@@ -89,7 +70,8 @@ class _HelpPointPageState extends State<HelpPointPage> {
                       height: 80.0,
                       point: point,
                       builder: (ctx) => Container(
-                        child: Icon(Icons.location_on, color: Colors.red, size: 40.0),
+                        child: Icon(Icons.location_on,
+                            color: Colors.red, size: 40.0),
                       ),
                     );
                   }).toList(),
@@ -107,27 +89,6 @@ class _HelpPointPageState extends State<HelpPointPage> {
             ),
           ),
         ],
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today),
-            label: 'Agenda',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.location_on),
-            label: 'Mapa',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.notifications),
-            label: 'Notificações',
-          ),
-        ],
-        selectedItemColor: Colors.green,
       ),
     );
   }

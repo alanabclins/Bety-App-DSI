@@ -1,9 +1,8 @@
-import 'package:bety_sprint1/screens/cadastro_screen.dart';
+//import 'package:bety_sprint1/screens/cadastro_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:bety_sprint1/services/auth_service.dart';
-import 'home_screen.dart';
-//import 'package:bety_sprint1/screens/tela_Perfil.dart';
+//import 'home_screen.dart';
 
 class LoginScreen extends StatelessWidget {
   LoginScreen({super.key});
@@ -104,13 +103,8 @@ class LoginScreen extends StatelessWidget {
                             if (result == null) {
                               User? user = FirebaseAuth.instance.currentUser;
                               if (user != null) {
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        HomeScreen(user: user),
-                                  ),
-                                );
+                                Navigator.pushReplacementNamed(
+                                    context, '/home');
                               } else {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
@@ -144,12 +138,7 @@ class LoginScreen extends StatelessWidget {
                     const SizedBox(height: 10),
                     TextButton(
                       onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const CadastroScreen(),
-                          ),
-                        );
+                        Navigator.pushNamed(context, '/cadastro');
                       },
                       child: const Text(
                         "para se cadastrar clique aqui",

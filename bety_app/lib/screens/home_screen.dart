@@ -1,3 +1,4 @@
+import 'package:bety_sprint1/utils/custom_app_bar.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -9,16 +10,20 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Bem-vindo, ${user.displayName ?? 'Usuário'}'),
-        backgroundColor: const Color.fromARGB(255, 11, 171, 124),
+      appBar: CustomAppBar(
+        mainTitle: 'Home',
+        subtitle: '',
+        showLogoutButton: false,
+        onBackButtonPressed: () {
+          // Implementar ação para voltar
+        },
       ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text(
-              'Home',
+            Text(
+              'Bem vindo ${user.displayName}!',
               style: TextStyle(fontSize: 24),
             ),
             const SizedBox(height: 20),
