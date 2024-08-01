@@ -7,7 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 
 class ProfileScreen extends StatelessWidget {
-  final User user; // Adicione esta linha para receber o usuário
+  final User user;
 
   const ProfileScreen({super.key, required this.user});
 
@@ -19,6 +19,7 @@ class ProfileScreen extends StatelessWidget {
       appBar: CustomAppBar(
         mainTitle: 'Perfil',
         subtitle: 'Configure seu perfil',
+        showLogoutButton: true,
         onBackButtonPressed: () {
           // Implementar ação para voltar
         },

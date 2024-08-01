@@ -1,5 +1,7 @@
 // custom_app_bar.dart
+import 'package:bety_sprint1/screens/login_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:bety_sprint1/services/auth_service.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String mainTitle;
@@ -8,6 +10,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final Color textColor;
   final Color iconColor;
   final VoidCallback? onBackButtonPressed;
+  final bool showLogoutButton;
 
   CustomAppBar({
     required this.mainTitle,
@@ -16,6 +19,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.textColor = Colors.white,
     this.iconColor = Colors.white,
     this.onBackButtonPressed,
+    this.showLogoutButton = false,
   });
 
   @override
@@ -48,6 +52,24 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                     ),
                   ),
                 ),
+                if (showLogoutButton) // Exibe o ícone de logoff somente se showLogoutButton for true
+                  Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: IconButton(
+                      icon: Icon(Icons.logout, color: iconColor),
+                      onPressed: () async {
+                        // Chama a função de logoff do AuthService
+                        await AuthService().deslogar();
+                        // Navega para a tela de login após o logoff
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => LoginScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
               ],
             ),
           ),
