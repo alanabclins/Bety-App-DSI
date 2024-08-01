@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:bety_sprint1/services/auth_service.dart';
 import 'home_screen.dart';
+import 'package:bety_sprint1/screens/tela_Perfil.dart';
 
 class LoginScreen extends StatelessWidget {
   LoginScreen({super.key});
@@ -107,7 +108,7 @@ class LoginScreen extends StatelessWidget {
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) =>
-                                        HomeScreen(user: user),
+                                        ProfileScreen(user: user),
                                   ),
                                 );
                               } else {
