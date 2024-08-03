@@ -13,8 +13,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final bool showLogoutButton;
 
   CustomAppBar({
-    required this.mainTitle,
-    required this.subtitle,
+    this.mainTitle = '',
+    this.subtitle = '',
     this.backgroundColor = const Color(0xFF0BAB7C),
     this.textColor = Colors.white,
     this.iconColor = Colors.white,

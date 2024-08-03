@@ -1,3 +1,4 @@
+import 'package:bety_sprint1/screens/ponte_att_dados.dart';
 import 'package:flutter/material.dart';
 //import 'package:image_picker/image_picker.dart';
 //import 'dart:io';
@@ -7,8 +8,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ProfileScreen extends StatelessWidget {
   final User user;
-
-  const ProfileScreen(uid, {super.key, required this.user});
+  final Map<String, dynamic> userData;
+  const ProfileScreen({super.key, required this.user, required this.userData});
 
   @override
   Widget build(BuildContext context) {
@@ -37,8 +38,6 @@ class ProfileScreen extends StatelessWidget {
           if (!snapshot.hasData || !snapshot.data!.exists) {
             return Center(child: Text('Nenhum dado encontrado'));
           }
-
-          var userData = snapshot.data!.data() as Map<String, dynamic>;
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -88,7 +87,12 @@ class ProfileScreen extends StatelessWidget {
               SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () {
-                  // Ação para alterar informações
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => PonteAttDados(user: user, userData: userData),
+                      )
+                    );
                 },
                 child: Text('Alterar informações'),
                 style: ElevatedButton.styleFrom(
