@@ -80,77 +80,78 @@ class _MedicaoGlicoseScreenState extends State<MedicaoGlicoseScreen> {
             ),
           ),
           Expanded(
-              child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: 600),
-            child: ListView.builder(
-              itemCount: _filteredRecords().length,
-              itemBuilder: (context, index) {
-                final record = _filteredRecords()[index];
-                return Card(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                  ),
-                  margin: const EdgeInsets.all(8.0),
-                  color: Colors.lightGreen[100],
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16.0, vertical: 24.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8.0),
-                              decoration: BoxDecoration(
-                                color: Colors.green[800],
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Text(
-                                record['date'],
-                                style: TextStyle(color: Colors.white),
-                              ),
-                            ),
-                            Text(
-                              'Medição realizada às ${record['time']}',
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: 14.4,
-                                fontWeight: FontWeight.w700,
-                                height: 17.28 /
-                                    14.4, // line-height divided by font-size
-                                textBaseline: TextBaseline.alphabetic,
-                              ),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.close),
-                              onPressed: () => _deleteRecord(index),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                            'Concentração de glicose: ${record['glucose']} mg/dL'),
-                        const SizedBox(height: 8),
-                        Text('Tipo de medição: ${record['measurementType']}'),
-                      ],
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: 600),
+              child: ListView.builder(
+                itemCount: _filteredRecords().length,
+                itemBuilder: (context, index) {
+                  final record = _filteredRecords()[index];
+                  return Card(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10.0),
                     ),
-                  ),
-                );
-              },
-            ),
-          ) // contrained fecha aqui
+                    margin: const EdgeInsets.all(8.0),
+                    color: Colors.lightGreen[100],
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16.0, vertical: 24.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8.0),
+                                decoration: BoxDecoration(
+                                  color: Colors.green[800],
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  record['date'],
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ),
+                              Text(
+                                'Medição realizada às ${record['time']}',
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: 14.4,
+                                  fontWeight: FontWeight.w700,
+                                  height: 17.28 /
+                                      14.4, // line-height divided by font-size
+                                  textBaseline: TextBaseline.alphabetic,
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.close),
+                                onPressed: () => _deleteRecord(index),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                              'Concentração de glicose: ${record['glucose']} mg/dL'),
+                          const SizedBox(height: 8),
+                          Text(
+                              'Tipo de medição: ${record['measurementType']}'),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               ),
+            ),
+          ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          showDialog(
-            context: context,
-            builder: (BuildContext context) {
-              return AddRecordDialog(onSubmit: _addRecord);
-            },
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => AddRecordScreen(onSubmit: _addRecord),
+            ),
           );
         },
         child: const Icon(Icons.add),
@@ -161,16 +162,16 @@ class _MedicaoGlicoseScreenState extends State<MedicaoGlicoseScreen> {
   }
 }
 
-class AddRecordDialog extends StatefulWidget {
+class AddRecordScreen extends StatefulWidget {
   final Function(Map<String, dynamic>) onSubmit;
 
-  const AddRecordDialog({super.key, required this.onSubmit});
+  const AddRecordScreen({super.key, required this.onSubmit});
 
   @override
-  _AddRecordDialogState createState() => _AddRecordDialogState();
+  _AddRecordScreenState createState() => _AddRecordScreenState();
 }
 
-class _AddRecordDialogState extends State<AddRecordDialog> {
+class _AddRecordScreenState extends State<AddRecordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _dateController = TextEditingController();
   final _timeController = TextEditingController();
@@ -227,99 +228,129 @@ class _AddRecordDialogState extends State<AddRecordDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Adicionar Registro'),
-      content: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextFormField(
-              controller: _dateController,
-              decoration: InputDecoration(
-                labelText: 'Data',
-                suffixIcon: IconButton(
-                  icon: Icon(Icons.calendar_today),
-                  onPressed: () {
-                    _selectDate(context);
-                  },
+    return Scaffold(
+      appBar: CustomAppBar(
+        mainTitle: 'Adicionar Registro',
+        subtitle: 'Insira os detalhes da medição',
+        showLogoutButton: false,
+        onBackButtonPressed: () {
+          Navigator.pop(context);
+        },
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              TextFormField(
+                controller: _dateController,
+                decoration: InputDecoration(
+                  labelText: 'Data',
+                  labelStyle: TextStyle(color: Colors.black),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                    borderSide: BorderSide(color: Color(0xFF0BAB7C)),
+                  ),
+                  suffixIcon: IconButton(
+                    icon: Icon(Icons.calendar_today, color: Color(0xFF0BAB7C)),
+                    onPressed: () {
+                      _selectDate(context);
+                    },
+                  ),
+                ),
+                readOnly: true,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor, insira a data';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _timeController,
+                decoration: InputDecoration(
+                  labelText: 'Hora',
+                  labelStyle: TextStyle(color: Colors.black),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                    borderSide: BorderSide(color: Color(0xFF0BAB7C)),
+                  ),
+                  suffixIcon: IconButton(
+                    icon: Icon(Icons.access_time, color: Color(0xFF0BAB7C)),
+                    onPressed: () {
+                      _selectTime(context);
+                    },
+                  ),
+                ),
+                readOnly: true,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor, insira a hora';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _glucoseController,
+                decoration: InputDecoration(
+                  labelText: 'Concentração de glicose (mg/dL)',
+                  labelStyle: TextStyle(color: Colors.black),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                    borderSide: BorderSide(color: Color(0xFF0BAB7C)),
+                  ),
+                ),
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor, insira a concentração de glicose';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: _selectedMeasurementType,
+                decoration: InputDecoration(
+                  labelText: 'Tipo de Medição',
+                  labelStyle: TextStyle(color: Colors.black),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                    borderSide: BorderSide(color: Color(0xFF0BAB7C)),
+                  ),
+                ),
+                items: ['Jejum', 'Pós-prandial', 'Aleatório']
+                    .map((String type) => DropdownMenuItem<String>(
+                          value: type,
+                          child: Text(type),
+                        ))
+                    .toList(),
+                onChanged: (newValue) {
+                  setState(() {
+                    _selectedMeasurementType = newValue!;
+                  });
+                },
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: _submit,
+                child: Text('Adicionar Registro'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color(0xFF0BAB7C),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                      vertical: 16.0, horizontal: 32.0),
                 ),
               ),
-              readOnly: true,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Por favor, insira a data';
-                }
-                return null;
-              },
-            ),
-            TextFormField(
-              controller: _timeController,
-              decoration: InputDecoration(
-                labelText: 'Hora',
-                suffixIcon: IconButton(
-                  icon: Icon(Icons.access_time),
-                  onPressed: () {
-                    _selectTime(context);
-                  },
-                ),
-              ),
-              readOnly: true,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Por favor, insira a hora';
-                }
-                return null;
-              },
-            ),
-            TextFormField(
-              controller: _glucoseController,
-              decoration: const InputDecoration(
-                  labelText: 'Concentração de glicose (mg/dL)'),
-              keyboardType: TextInputType.number,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Por favor, insira a concentração de glicose';
-                }
-                return null;
-              },
-            ),
-            DropdownButtonFormField<String>(
-              value: _selectedMeasurementType,
-              decoration: const InputDecoration(labelText: 'Tipo de medição'),
-              items: [
-                'Jejum',
-                'Antes das refeições',
-                'Após as refeições',
-                'Antes de dormir',
-                'Ao acordar'
-              ].map((type) {
-                return DropdownMenuItem(
-                  value: type,
-                  child: Text(type),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  _selectedMeasurementType = value!;
-                });
-              },
-            ),
-          ],
+            ],
+          ),
         ),
       ),
-      actions: [
-        TextButton(
-          child: const Text('Cancelar'),
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-        ),
-        ElevatedButton(
-          onPressed: _submit,
-          child: const Text('Adicionar'),
-        ),
-      ],
     );
   }
 }
