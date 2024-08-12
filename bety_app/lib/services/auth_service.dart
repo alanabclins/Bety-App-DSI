@@ -192,26 +192,29 @@ class AuthService {
     }
   }
   Future<String?> registrarGlicose({
-    required String userId,
-    required DateTime hora,
-    String? tipo,
-    String? descricao,
-  }) async {
-    try {
-      await _firestore
-          .collection('usuarios')
-          .doc(userId)
-          .collection('glicemia')
-          .add({
-        'hora': hora,
-        'tipo': tipo ?? 'Refeição',
-        'descricao': descricao ?? '',
-      });
-    } on FirebaseException catch (e) {
-      return e.code;
-    }
-    return null;
+  required String userId,
+  required DateTime hora,
+  required int concentracaoGlicose,
+  required String tipo,
+  String? descricao,
+}) async {
+  try {
+    await _firestore
+        .collection('usuarios')
+        .doc(userId)
+        .collection('glicemia')
+        .add({
+      'hora': hora,
+      'concentracaoGlicose': concentracaoGlicose,
+      'tipo': tipo,
+      'descricao': descricao ?? '',
+    });
+  } on FirebaseException catch (e) {
+    return e.code;
   }
+  return null;
+}
+
 }
 
 class StorageService {
