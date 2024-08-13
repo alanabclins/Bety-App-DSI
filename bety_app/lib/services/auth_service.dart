@@ -183,13 +183,35 @@ class AuthService {
           .orderBy('hora')
           .get();
 
-      return querySnapshot.docs
-          .map((doc) => doc.data() as Map<String, dynamic>)
-          .toList();
+      return querySnapshot.docs.map((doc) {
+      var data = doc.data() as Map<String, dynamic>;
+      data['refeicaoId'] = doc.id; // Adiciona o documentId
+      return data;
+    }).toList();
     } on FirebaseException catch (e) {
       print('Erro ao obter refeições: $e');
       return [];
     }
+  }
+
+   // Método para excluir uma refeição
+  Future<String?> excluirRefeicao({
+    required String userId,
+    required String refeicaoId,
+  }) async {
+    try {
+      // Remove o documento da refeição com o ID fornecido
+      await _firestore
+          .collection('usuarios')
+          .doc(userId)
+          .collection('refeicoes')
+          .doc(refeicaoId)
+          .delete();
+    } on FirebaseException catch (e) {
+      print('Erro ao excluir refeição: $e');
+      return e.code;
+    }
+    return null;
   }
 }
 

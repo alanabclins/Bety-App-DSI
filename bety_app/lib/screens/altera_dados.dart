@@ -5,6 +5,7 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:bety_sprint1/services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import 'package:bety_sprint1/utils/alert_dialog.dart';
 
 class DadosCadastraisScreen extends StatefulWidget {
   final User user;
@@ -184,6 +185,20 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
     );
   }
 
+  void _handleExcluirRefeicao(String refeicaoId) async {
+    final String? error = await _authService.excluirRefeicao(
+      userId: widget.user.uid,
+      refeicaoId: refeicaoId,
+    );
+    if (error != null) {
+      print('Erro ao excluir refeição: $error');
+    } else {
+      setState(() {
+        _refeicoesFuture = _authService.obterRefeicoes(widget.user.uid);
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -231,32 +246,58 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
                       height: 200.0,
                       autoPlay: true,
                       enlargeCenterPage: true,
-                      aspectRatio: 16/9, // Ajuste conforme necessário
-                      viewportFraction: 0.8, // Ajusta o tamanho do card
+                      aspectRatio: 16/9,
+                      viewportFraction: 0.8,
                     ),
                     items: [
                       ...refeicoes.map((refeicao) {
                         final hora = (refeicao['hora'] as Timestamp).toDate();
                         final horaFormatada = DateFormat('HH:mm').format(hora);
+                        final refeicaoId = refeicao['refeicaoId'];
 
                         return Builder(
                           builder: (BuildContext context) {
                             return Container(
-                              width: 200.0, // Define a largura fixa do card
+                              width: 200.0,
                               child: Card(
-                                color: Color(0xFF0BAB7C), // Define a cor de fundo do card
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
+                                color: Color(0xFF0BAB7C),
+                                child: Stack(
                                   children: [
-                                    SizedBox(height: 18.0),
-                                    Text(
-                                      refeicao['descricao'] ?? 'Sem descrição',
-                                      style: TextStyle(fontSize: 20.0, color: Colors.white), // Texto branco
+                                    Center(
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          SizedBox(height: 18.0),
+                                          Text(
+                                            refeicao['descricao'] ?? 'Sem descrição',
+                                            style: TextStyle(fontSize: 20.0, color: Colors.white),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                          SizedBox(height: 10.0),
+                                          Text(
+                                            horaFormatada,
+                                            style: TextStyle(fontSize: 18.0, color: Colors.white),
+                                          ),
+                                        ],
+                                      ),
                                     ),
-                                    SizedBox(height: 10.0),
-                                    Text(
-                                      horaFormatada,
-                                      style: TextStyle(fontSize: 18.0, color: Colors.white), // Texto branco
+                                    Positioned(
+                                      right: 10,
+                                      top: 10,
+                                      child: IconButton(
+                                        icon: Icon(Icons.delete, color: Colors.white),
+                                        onPressed: () {
+                                          print('ID da refeição para exclusão: $refeicaoId');
+                                          CustomAlertDialog.show(
+                                            context: context,
+                                            title: 'Excluir refeição',
+                                            content: 'Você tem certeza que deseja excluir esta refeição?',
+                                            onConfirm: () {
+                                              _handleExcluirRefeicao(refeicaoId);
+                                            },
+                                          );
+                                        },
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -268,19 +309,19 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
                       Builder(
                         builder: (BuildContext context) {
                           return Container(
-                            width: 300.0, // Define a largura fixa do card
+                            width: 300.0,
                             child: Card(
-                              color: Color(0xFF0BAB7C), // Define a cor de fundo do card
+                              color: Color(0xFF0BAB7C),
                               child: InkWell(
                                 onTap: _addNewRefeicao,
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(Icons.add, size: 50.0, color: Colors.white), // Ícone branco
+                                    Icon(Icons.add, size: 50.0, color: Colors.white),
                                     SizedBox(height: 10.0),
                                     Text(
                                       'Adicionar nova refeição',
-                                      style: TextStyle(fontSize: 18.0, color: Colors.white), // Texto branco
+                                      style: TextStyle(fontSize: 18.0, color: Colors.white),
                                     ),
                                   ],
                                 ),
@@ -299,7 +340,16 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 ElevatedButton(
-                  onPressed: _handleButtonPress,
+                  onPressed: () {
+                    CustomAlertDialog.show(
+                      context: context, 
+                      title: 'Salvar alterações', 
+                      content: 'Você tem certeza que deseja salver as alterações?', 
+                      onConfirm: () {
+                        _handleButtonPress();
+                      },
+                    );
+                  },
                   child: Text('Salvar'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Color(0xFF0BAB7C),

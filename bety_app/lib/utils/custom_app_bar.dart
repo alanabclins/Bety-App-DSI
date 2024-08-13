@@ -2,6 +2,7 @@
 import 'package:bety_sprint1/screens/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:bety_sprint1/services/auth_service.dart';
+import 'package:bety_sprint1/utils/alert_dialog.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String mainTitle;
@@ -57,15 +58,20 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                     padding: EdgeInsets.all(8.0),
                     child: IconButton(
                       icon: Icon(Icons.logout, color: iconColor),
-                      onPressed: () async {
-                        // Chama a função de logoff do AuthService
-                        await AuthService().deslogar();
-                        // Navega para a tela de login após o logoff
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => LoginScreen(),
-                          ),
+                      onPressed: () {
+                        CustomAlertDialog.show(
+                          context: context, 
+                          title: 'Logoff', 
+                          content: 'Tem certeza que deseja desconectar do aplicativo?', 
+                          onConfirm: () async {
+                            await AuthService().deslogar();
+                            Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => LoginScreen(),
+                              ),
+                            );
+                          },
                         );
                       },
                     ),
