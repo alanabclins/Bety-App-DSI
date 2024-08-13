@@ -4,7 +4,7 @@ import 'package:bety_sprint1/utils/custom_app_bar.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:bety_sprint1/services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-//import 'package:bety_sprint1/services/auth_email_service.dart';
+import 'package:intl/intl.dart';
 
 class DadosCadastraisScreen extends StatefulWidget {
   final User user;
@@ -22,20 +22,16 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
   late TextEditingController _dataNascimentoController;
   late TextEditingController _emailController;
   late Future<List<Map<String, dynamic>>> _refeicoesFuture;
-  final AuthService _authService =
-      AuthService(); // Adiciona uma instância do AuthService
+  final AuthService _authService = AuthService();
 
   @override
   void initState() {
     super.initState();
     _nomeController = TextEditingController(text: widget.userData['nome']);
-    _tipoDiabetesController =
-        TextEditingController(text: widget.userData['tipoDiabetes']);
-    _dataNascimentoController =
-        TextEditingController(text: widget.userData['dataNascimento']);
+    _tipoDiabetesController = TextEditingController(text: widget.userData['tipoDiabetes']);
+    _dataNascimentoController = TextEditingController(text: widget.userData['dataNascimento']);
     _emailController = TextEditingController(text: widget.userData['email']);
-    _refeicoesFuture = _authService.obterRefeicoes(
-        widget.user.uid); // Atualiza a referência para AuthService
+    _refeicoesFuture = _authService.obterRefeicoes(widget.user.uid);
   }
 
   @override
@@ -49,11 +45,7 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
 
   Future<void> _saveData() async {
     try {
-      // Atualiza o documento no Firestore
-      await FirebaseFirestore.instance
-          .collection('usuarios')
-          .doc(widget.user.uid)
-          .update({
+      await FirebaseFirestore.instance.collection('usuarios').doc(widget.user.uid).update({
         'nome': _nomeController.text,
         'tipoDiabetes': _tipoDiabetesController.text,
         'dataNascimento': _dataNascimentoController.text,
@@ -68,26 +60,24 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
     final email = currentUser?.email;
     final newEmail = _emailController.text.trim();
     if (email != newEmail) {
-      await _saveData(); // Aguarda a conclusão da ação de salvar
+      await _saveData();
       try {
         String? emailUpdateError = await _authService.atualizarEmail(newEmail);
         if (emailUpdateError != null) {
           print('Erro ao atualizar email: $emailUpdateError');
         } else {
-          // Se a atualização do email for bem-sucedida, navegue para a HomeScreen
           await FirebaseAuth.instance.signOut();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(
-                  'Verifique seu email antes do próximo login para que seja alterado'),
+              content: Text('Verifique seu email antes do próximo login para que seja alterado'),
               duration: Duration(seconds: 3),
             ),
           );
           if (mounted) {
             Navigator.pushNamedAndRemoveUntil(
               context,
-              '/login', // Nome da rota para a HomeScreen
-              (route) => false, // Remove todas as rotas anteriores
+              '/login',
+              (route) => false,
             );
           }
         }
@@ -99,7 +89,7 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
       if (mounted) {
         Navigator.pushNamedAndRemoveUntil(
           context,
-          '/home', // Nome da rota para a HomeScreen
+          '/home',
           (route) => false,
         );
       }
@@ -110,21 +100,45 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        final TextEditingController tipoController = TextEditingController();
-        final TextEditingController descricaoController =
-            TextEditingController();
+        final TextEditingController descricaoController = TextEditingController();
+        TimeOfDay? selectedTime;
+
+        Future<void> _selectTime(BuildContext context) async {
+          final TimeOfDay? picked = await showTimePicker(
+            context: context,
+            initialTime: TimeOfDay.now(),
+            builder: (BuildContext context, Widget? child) {
+              return MediaQuery(
+                data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+                child: child!,
+              );
+            },
+          );
+          if (picked != null && picked != selectedTime) {
+            setState(() {
+              selectedTime = picked;
+            });
+          }
+        }
+
         return AlertDialog(
           title: Text('Adicionar Nova Refeição'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
-                controller: tipoController,
-                decoration: InputDecoration(labelText: 'Tipo de Refeição'),
-              ),
-              TextField(
                 controller: descricaoController,
                 decoration: InputDecoration(labelText: 'Descrição'),
+              ),
+              SizedBox(height: 10),
+              Text(
+                selectedTime != null
+                    ? 'Hora selecionada: ${selectedTime!.format(context)}'
+                    : 'Nenhuma hora selecionada',
+              ),
+              TextButton(
+                onPressed: () => _selectTime(context),
+                child: Text('Escolher Hora'),
               ),
             ],
           ),
@@ -137,17 +151,30 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
             ),
             ElevatedButton(
               onPressed: () async {
-                await _authService.registrarRefeicao(
-                  userId: widget.user.uid,
-                  hora: DateTime.now(),
-                  tipo: tipoController.text,
-                  descricao: descricaoController.text,
-                );
-                setState(() {
-                  _refeicoesFuture =
-                      _authService.obterRefeicoes(widget.user.uid);
-                });
-                Navigator.of(context).pop();
+                if (selectedTime != null) {
+                  final now = DateTime.now();
+                  final DateTime hora = DateTime(
+                    now.year,
+                    now.month,
+                    now.day,
+                    selectedTime!.hour,
+                    selectedTime!.minute,
+                  );
+
+                  await _authService.registrarRefeicao(
+                    userId: widget.user.uid,
+                    hora: hora,
+                    descricao: descricaoController.text,
+                  );
+                  setState(() {
+                    _refeicoesFuture = _authService.obterRefeicoes(widget.user.uid);
+                  });
+                  Navigator.of(context).pop();
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Por favor, selecione uma hora')),
+                  );
+                }
               },
               child: Text('Adicionar'),
             ),
@@ -187,7 +214,7 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
               controller: _emailController,
               decoration: InputDecoration(labelText: 'Email'),
             ),
-            SizedBox(height: 20.0), // Espaço entre os campos e o carrossel
+            SizedBox(height: 20.0),
             Expanded(
               child: FutureBuilder<List<Map<String, dynamic>>>(
                 future: _refeicoesFuture,
@@ -204,57 +231,59 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
                       height: 200.0,
                       autoPlay: true,
                       enlargeCenterPage: true,
+                      aspectRatio: 16/9, // Ajuste conforme necessário
+                      viewportFraction: 0.8, // Ajusta o tamanho do card
                     ),
                     items: [
                       ...refeicoes.map((refeicao) {
+                        final hora = (refeicao['hora'] as Timestamp).toDate();
+                        final horaFormatada = DateFormat('HH:mm').format(hora);
+
                         return Builder(
                           builder: (BuildContext context) {
-                            return Card(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    refeicao['tipo'] ?? 'Refeição',
-                                    style: TextStyle(
-                                        fontSize: 24.0,
-                                        fontWeight: FontWeight.bold),
-                                  ),
-                                  SizedBox(height: 10.0),
-                                  Text(
-                                    refeicao['descricao'] ?? '',
-                                    style: TextStyle(fontSize: 16.0),
-                                  ),
-                                  SizedBox(height: 10.0),
-                                  Text(
-                                    (refeicao['hora'] as Timestamp)
-                                        .toDate()
-                                        .toString(),
-                                    style: TextStyle(fontSize: 14.0),
-                                  ),
-                                ],
+                            return Container(
+                              width: 200.0, // Define a largura fixa do card
+                              child: Card(
+                                color: Color(0xFF0BAB7C), // Define a cor de fundo do card
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    SizedBox(height: 18.0),
+                                    Text(
+                                      refeicao['descricao'] ?? 'Sem descrição',
+                                      style: TextStyle(fontSize: 20.0, color: Colors.white), // Texto branco
+                                    ),
+                                    SizedBox(height: 10.0),
+                                    Text(
+                                      horaFormatada,
+                                      style: TextStyle(fontSize: 18.0, color: Colors.white), // Texto branco
+                                    ),
+                                  ],
+                                ),
                               ),
                             );
                           },
                         );
                       }).toList(),
-                      // Card de adicionar nova refeição
                       Builder(
                         builder: (BuildContext context) {
-                          return Card(
-                            child: InkWell(
-                              onTap: _addNewRefeicao,
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.add,
-                                      size: 50.0, color: Colors.grey),
-                                  SizedBox(height: 10.0),
-                                  Text(
-                                    'Adicionar nova refeição',
-                                    style: TextStyle(
-                                        fontSize: 18.0, color: Colors.grey),
-                                  ),
-                                ],
+                          return Container(
+                            width: 300.0, // Define a largura fixa do card
+                            child: Card(
+                              color: Color(0xFF0BAB7C), // Define a cor de fundo do card
+                              child: InkWell(
+                                onTap: _addNewRefeicao,
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.add, size: 50.0, color: Colors.white), // Ícone branco
+                                    SizedBox(height: 10.0),
+                                    Text(
+                                      'Adicionar nova refeição',
+                                      style: TextStyle(fontSize: 18.0, color: Colors.white), // Texto branco
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           );

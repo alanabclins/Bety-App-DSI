@@ -4,6 +4,7 @@ import 'auth_email_service.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:path/path.dart' as path;
 import 'dart:io';
+//import 'package:intl/intl.dart';
 
 class AuthService {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
@@ -154,18 +155,17 @@ class AuthService {
   Future<String?> registrarRefeicao({
     required String userId,
     required DateTime hora,
-    String? tipo,
     String? descricao,
   }) async {
     try {
+      //String horaFormatada =  "${hora.hour.toString().padLeft(2, '0')}:${hora.minute.toString().padLeft(2, '0')}";
       await _firestore
           .collection('usuarios')
           .doc(userId)
           .collection('refeicoes')
           .add({
         'hora': hora,
-        'tipo': tipo ?? 'Refeição',
-        'descricao': descricao ?? '',
+        'descricao': descricao,
       });
     } on FirebaseException catch (e) {
       return e.code;
@@ -180,7 +180,7 @@ class AuthService {
           .collection('usuarios')
           .doc(userId)
           .collection('refeicoes')
-          .orderBy('hora', descending: true)
+          .orderBy('hora')
           .get();
 
       return querySnapshot.docs

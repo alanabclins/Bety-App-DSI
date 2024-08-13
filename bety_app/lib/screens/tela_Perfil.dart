@@ -1,3 +1,4 @@
+import 'package:bety_sprint1/screens/altera_dados.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
@@ -5,7 +6,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bety_sprint1/utils/custom_app_bar.dart';
-import 'package:bety_sprint1/screens/ponte_att_dados.dart';
+//import 'package:bety_sprint1/screens/ponte_att_dados.dart';
 import 'package:path/path.dart' as path;
 
 class ProfileScreen extends StatefulWidget {
@@ -157,7 +158,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => PonteAttDados(user: widget.user, userData: userData),
+                      builder: (context) => DadosCadastraisScreen(user: widget.user, userData: userData),
                     ),
                   );
                 },
