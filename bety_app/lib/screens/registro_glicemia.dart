@@ -15,6 +15,7 @@ class MedicaoGlicoseScreen extends StatefulWidget {
 
 class _MedicaoGlicoseScreenState extends State<MedicaoGlicoseScreen> {
   final TextEditingController _searchController = TextEditingController();
+  DateTime? _selectedDate;
 
   void _deleteRecord(String id) async {
     await FirebaseFirestore.instance
@@ -23,6 +24,21 @@ class _MedicaoGlicoseScreenState extends State<MedicaoGlicoseScreen> {
         .collection('glucoseRecords')
         .doc(id)
         .delete();
+  }
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = picked;
+        _searchController.text = DateFormat('dd/MM/yyyy').format(picked);
+      });
+    }
   }
 
   @override
@@ -42,16 +58,20 @@ class _MedicaoGlicoseScreenState extends State<MedicaoGlicoseScreen> {
             padding: const EdgeInsets.all(8.0),
             child: TextField(
               controller: _searchController,
+              readOnly: true,
               decoration: InputDecoration(
                 labelText: 'Buscar por data',
                 prefixIcon: const Icon(Icons.search),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8.0),
                 ),
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.calendar_today),
+                  onPressed: () {
+                    _selectDate(context);
+                  },
+                ),
               ),
-              onChanged: (value) {
-                setState(() {});
-              },
             ),
           ),
           Expanded(
@@ -66,15 +86,15 @@ class _MedicaoGlicoseScreenState extends State<MedicaoGlicoseScreen> {
                     .snapshots(),
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) {
-                    return Center(child: CircularProgressIndicator());
+                    return const Center(child: CircularProgressIndicator());
                   }
 
                   var records = snapshot.data!.docs;
 
-                  if (_searchController.text.isNotEmpty) {
+                  if (_selectedDate != null) {
+                    final searchDate = DateFormat('dd/MM/yyyy').format(_selectedDate!);
                     records = records.where((record) {
-                      final recordDate = (record['date'] as String).toLowerCase();
-                      return recordDate.contains(_searchController.text.toLowerCase());
+                      return record['date'] == searchDate;
                     }).toList();
                   }
 
@@ -105,12 +125,12 @@ class _MedicaoGlicoseScreenState extends State<MedicaoGlicoseScreen> {
                                     ),
                                     child: Text(
                                       record['date'],
-                                      style: TextStyle(color: Colors.white),
+                                      style: const TextStyle(color: Colors.white),
                                     ),
                                   ),
                                   Text(
                                     'Medição realizada às ${record['time']}',
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       fontFamily: 'Poppins',
                                       fontSize: 14.4,
                                       fontWeight: FontWeight.w700,
@@ -150,7 +170,7 @@ class _MedicaoGlicoseScreenState extends State<MedicaoGlicoseScreen> {
           );
         },
         child: const Icon(Icons.add),
-        backgroundColor: Color(0xFF0BAB7C),
+        backgroundColor: const Color(0xFF0BAB7C),
         foregroundColor: Colors.white,
       ),
     );
@@ -165,6 +185,9 @@ class AddRecordScreen extends StatefulWidget {
   @override
   _AddRecordScreenState createState() => _AddRecordScreenState();
 }
+
+// O código de AddRecordScreen permanece o mesmo.
+
 
 class _AddRecordScreenState extends State<AddRecordScreen> {
   final _formKey = GlobalKey<FormState>();
