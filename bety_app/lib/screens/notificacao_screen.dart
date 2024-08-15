@@ -1,3 +1,4 @@
+import 'package:bety_sprint1/utils/custom_app_bar.dart';
 import 'package:flutter/material.dart';
 import '../notification_service.dart';
 import 'package:provider/provider.dart';
@@ -24,6 +25,7 @@ class _NotificacaoScreenState extends State<NotificacaoScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+<<<<<<< HEAD
       appBar: AppBar(
         title: Text(
           'Notificações',
@@ -39,6 +41,15 @@ class _NotificacaoScreenState extends State<NotificacaoScreen> {
             Navigator.pop(context); // Voltar pra tela anterior
           },
         ),
+=======
+      appBar: CustomAppBar(
+        mainTitle: 'Notificação',
+        subtitle: 'Se atente às suas notificações!',
+        showLogoutButton: false,
+        onBackButtonPressed: () {
+          Navigator.pushNamed(context, '/home');
+        },
+>>>>>>> main
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16),
@@ -72,9 +83,15 @@ class _NotificacaoScreenState extends State<NotificacaoScreen> {
             SizedBox(height: 20), 
             ElevatedButton(
               onPressed: () {
+<<<<<<< HEAD
                 setState(() {
                   valor = !valor; // Alternar o valor do checkbox
                 });
+=======
+                // Ação do botão
+                Navigator.pop(
+                    context); // Exemplo de ação: voltar à tela anterior
+>>>>>>> main
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Color(0xFF0BAB7C), // Cor do botão
