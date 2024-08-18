@@ -80,7 +80,6 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             ),
           ),
           Container(
-            color: Colors.transparent,
             width: double.infinity,
             padding: EdgeInsets.all(15),
             decoration: BoxDecoration(
