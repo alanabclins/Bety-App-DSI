@@ -32,6 +32,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
         fontFamily: 'Poppins',
+        scaffoldBackgroundColor: const Color(0xFFFBFAF3)
       ),
       home: RoteadorTelas(),
       routes: {
