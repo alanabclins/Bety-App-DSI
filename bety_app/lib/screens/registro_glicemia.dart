@@ -26,6 +26,13 @@ class _MedicaoGlicoseScreenState extends State<MedicaoGlicoseScreen> {
         .delete();
   }
 
+  void _clearSearch() {
+    setState(() {
+      _searchController.clear();
+      _selectedDate = null;
+    });
+  }
+
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -65,11 +72,20 @@ class _MedicaoGlicoseScreenState extends State<MedicaoGlicoseScreen> {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8.0),
                 ),
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.calendar_today),
-                  onPressed: () {
-                    _selectDate(context);
-                  },
+                suffixIcon: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: _clearSearch,
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.calendar_today),
+                      onPressed: () {
+                        _selectDate(context);
+                      },
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -134,13 +150,33 @@ class _MedicaoGlicoseScreenState extends State<MedicaoGlicoseScreen> {
                                       fontFamily: 'Poppins',
                                       fontSize: 14.4,
                                       fontWeight: FontWeight.w700,
-                                      height: 17.28 / 14.4, // line-height divided by font-size
+                                      height: 17.28 / 14.4,
                                       textBaseline: TextBaseline.alphabetic,
                                     ),
                                   ),
-                                  IconButton(
-                                    icon: const Icon(Icons.close),
-                                    onPressed: () => _deleteRecord(record.id),
+                                  Row(
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.edit),
+                                        onPressed: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => EditRecordScreen(
+                                                user: widget.user,
+                                                recordId: record.id,
+                                                recordData: record.data()
+                                                    as Map<String, dynamic>,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.close),
+                                        onPressed: () => _deleteRecord(record.id),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
@@ -158,24 +194,267 @@ class _MedicaoGlicoseScreenState extends State<MedicaoGlicoseScreen> {
               ),
             ),
           ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => AddRecordScreen(user: widget.user),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: ElevatedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AddRecordScreen(user: widget.user),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.add),
+              label: const Text('Adicionar Registro de Glicemia'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0BAB7C), // Cor do botão
+                foregroundColor: Colors.white, // Cor do texto e ícone
+                padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 32.0),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.0),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 18.0,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
-          );
-        },
-        child: const Icon(Icons.add),
-        backgroundColor: const Color(0xFF0BAB7C),
-        foregroundColor: Colors.white,
+          ),
+        ],
       ),
     );
   }
 }
+
+class EditRecordScreen extends StatefulWidget {
+  final User user;
+  final String recordId;
+  final Map<String, dynamic> recordData;
+
+  const EditRecordScreen({
+    super.key,
+    required this.user,
+    required this.recordId,
+    required this.recordData,
+  });
+
+  @override
+  _EditRecordScreenState createState() => _EditRecordScreenState();
+}
+
+class _EditRecordScreenState extends State<EditRecordScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _dateController = TextEditingController();
+  final _timeController = TextEditingController();
+  final _glucoseController = TextEditingController();
+  late String _selectedMeasurementType;
+
+  @override
+  void initState() {
+    super.initState();
+    _dateController.text = widget.recordData['date'];
+    _timeController.text = widget.recordData['time'];
+    _glucoseController.text = widget.recordData['glucose'].toString();
+    _selectedMeasurementType = widget.recordData['measurementType'];
+  }
+
+  @override
+  void dispose() {
+    _dateController.dispose();
+    _timeController.dispose();
+    _glucoseController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null) {
+      setState(() {
+        _dateController.text = DateFormat('dd/MM/yyyy').format(picked);
+      });
+    }
+  }
+
+  Future<void> _selectTime(BuildContext context) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+    if (picked != null) {
+      final now = DateTime.now();
+      final formattedTime = DateFormat('HH:mm').format(
+          DateTime(now.year, now.month, now.day, picked.hour, picked.minute));
+      setState(() {
+        _timeController.text = formattedTime;
+      });
+    }
+  }
+
+  Future<void> _submit() async {
+    if (_formKey.currentState!.validate()) {
+      await FirebaseFirestore.instance
+          .collection('usuarios')
+          .doc(widget.user.uid)
+          .collection('glucoseRecords')
+          .doc(widget.recordId)
+          .update({
+        'date': _dateController.text,
+        'time': _timeController.text,
+        'glucose': int.parse(_glucoseController.text),
+        'measurementType': _selectedMeasurementType,
+      });
+      Navigator.of(context).pop();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: CustomAppBar(
+        mainTitle: 'Editar Registro',
+        subtitle: 'Atualize os detalhes da medição',
+        showLogoutButton: false,
+        onBackButtonPressed: () {
+          Navigator.pop(context);
+        },
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            children: [
+              TextFormField(
+                controller: _dateController,
+                decoration: InputDecoration(
+                  labelText: 'Data',
+                  labelStyle: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                  filled: true,
+                  fillColor: Colors.grey[200],
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                    borderSide: const BorderSide(color: Color(0xFF0BAB7C)),
+                  ),
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.calendar_today, color: Color(0xFF0BAB7C)),
+                    onPressed: () {
+                      _selectDate(context);
+                    },
+                  ),
+                ),
+                readOnly: true,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor, insira a data';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _timeController,
+                decoration: InputDecoration(
+                  labelText: 'Hora',
+                  labelStyle: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                  filled: true,
+                  fillColor: Colors.grey[200],
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                    borderSide: const BorderSide(color: Color(0xFF0BAB7C)),
+                  ),
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.access_time, color: Color(0xFF0BAB7C)),
+                    onPressed: () {
+                      _selectTime(context);
+                    },
+                  ),
+                ),
+                readOnly: true,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor, insira a hora';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _glucoseController,
+                decoration: InputDecoration(
+                  labelText: 'Concentração de glicose (mg/dL)',
+                  labelStyle: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                  filled: true,
+                  fillColor: Colors.grey[200],
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                    borderSide: const BorderSide(color: Color(0xFF0BAB7C)),
+                  ),
+                ),
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor, insira a concentração de glicose';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: _selectedMeasurementType,
+                decoration: InputDecoration(
+                  labelText: 'Tipo de medição',
+                  labelStyle: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                  filled: true,
+                  fillColor: Colors.grey[200],
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                    borderSide: const BorderSide(color: Color(0xFF0BAB7C)),
+                  ),
+                ),
+                items: ['Jejum', 'Pós-prandial', 'Aleatória']
+                    .map<DropdownMenuItem<String>>((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedMeasurementType = value!;
+                  });
+                },
+              ),
+              const SizedBox(height: 32),
+              ElevatedButton(
+                onPressed: _submit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0BAB7C),
+                  padding: const EdgeInsets.symmetric(vertical: 16.0),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                  ),
+                ),
+                child: const Text(
+                  'Salvar',
+                  style: TextStyle(fontSize: 18, 
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 
 class AddRecordScreen extends StatefulWidget {
   final User user;
@@ -185,9 +464,6 @@ class AddRecordScreen extends StatefulWidget {
   @override
   _AddRecordScreenState createState() => _AddRecordScreenState();
 }
-
-// O código de AddRecordScreen permanece o mesmo.
-
 
 class _AddRecordScreenState extends State<AddRecordScreen> {
   final _formKey = GlobalKey<FormState>();
@@ -264,19 +540,21 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
-          child: Column(
+          child: ListView(
             children: [
               TextFormField(
                 controller: _dateController,
                 decoration: InputDecoration(
                   labelText: 'Data',
-                  labelStyle: TextStyle(color: Colors.black),
+                  labelStyle: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                  filled: true,
+                  fillColor: Colors.grey[200],
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                    borderSide: BorderSide(color: Color(0xFF0BAB7C)),
+                    borderRadius: BorderRadius.circular(12.0),
+                    borderSide: const BorderSide(color: Color(0xFF0BAB7C)),
                   ),
                   suffixIcon: IconButton(
-                    icon: Icon(Icons.calendar_today, color: Color(0xFF0BAB7C)),
+                    icon: const Icon(Icons.calendar_today, color: Color(0xFF0BAB7C)),
                     onPressed: () {
                       _selectDate(context);
                     },
@@ -295,13 +573,15 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
                 controller: _timeController,
                 decoration: InputDecoration(
                   labelText: 'Hora',
-                  labelStyle: TextStyle(color: Colors.black),
+                  labelStyle: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                  filled: true,
+                  fillColor: Colors.grey[200],
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                    borderSide: BorderSide(color: Color(0xFF0BAB7C)),
+                    borderRadius: BorderRadius.circular(12.0),
+                    borderSide: const BorderSide(color: Color(0xFF0BAB7C)),
                   ),
                   suffixIcon: IconButton(
-                    icon: Icon(Icons.access_time, color: Color(0xFF0BAB7C)),
+                    icon: const Icon(Icons.access_time, color: Color(0xFF0BAB7C)),
                     onPressed: () {
                       _selectTime(context);
                     },
@@ -320,10 +600,12 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
                 controller: _glucoseController,
                 decoration: InputDecoration(
                   labelText: 'Concentração de glicose (mg/dL)',
-                  labelStyle: TextStyle(color: Colors.black),
+                  labelStyle: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                  filled: true,
+                  fillColor: Colors.grey[200],
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                    borderSide: BorderSide(color: Color(0xFF0BAB7C)),
+                    borderRadius: BorderRadius.circular(12.0),
+                    borderSide: const BorderSide(color: Color(0xFF0BAB7C)),
                   ),
                 ),
                 keyboardType: TextInputType.number,
@@ -339,10 +621,12 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
                 value: _selectedMeasurementType,
                 decoration: InputDecoration(
                   labelText: 'Tipo de medição',
-                  labelStyle: TextStyle(color: Colors.black),
+                  labelStyle: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                  filled: true,
+                  fillColor: Colors.grey[200],
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                    borderSide: BorderSide(color: Color(0xFF0BAB7C)),
+                    borderRadius: BorderRadius.circular(12.0),
+                    borderSide: const BorderSide(color: Color(0xFF0BAB7C)),
                   ),
                 ),
                 items: ['Jejum', 'Pós-prandial', 'Aleatória']
@@ -361,10 +645,19 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
               const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: _submit,
-                style: ButtonStyle(
-                  backgroundColor: MaterialStateProperty.all(Color(0xFF0BAB7C)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0BAB7C),
+                  padding: const EdgeInsets.symmetric(vertical: 16.0),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                  ),
                 ),
-                child: Text('Salvar'),
+                child: const Text(
+                  'Salvar',
+                  style: TextStyle(fontSize: 18, 
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,  ),
+                ),
               ),
             ],
           ),
