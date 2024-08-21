@@ -1,3 +1,4 @@
+import 'package:bety_sprint1/screens/recuperar_senha.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -29,11 +30,10 @@ class MyApp extends StatelessWidget {
       title: 'Flutter Demo',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-        fontFamily: 'Poppins',
-        scaffoldBackgroundColor: const Color(0xFFFBFAF3)
-      ),
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+          useMaterial3: true,
+          fontFamily: 'Poppins',
+          scaffoldBackgroundColor: const Color(0xFFFBFAF3)),
       home: RoteadorTelas(),
       routes: {
         '/login': (context) => LoginScreen(),
@@ -41,9 +41,11 @@ class MyApp extends StatelessWidget {
         '/home': (context) => MainScreen(),
         '/notificacao': (context) => NotificacaoScreen(),
         '/registroGlicemia': (context) => MedicaoGlicoseScreen(),
+        '/recuperar_senha': (context) => RecuperarSenhaScreen(),
         '/perfil': (context) {
           // Obtenha os parâmetros passados para a tela ProfileScreen
-          final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+          final args = ModalRoute.of(context)!.settings.arguments
+              as Map<String, dynamic>;
           return ProfileScreen(user: args['user'], userData: args['userData']);
         },
       },
@@ -85,7 +87,10 @@ class _MainScreenState extends State<MainScreen> {
 
   // Função para obter os dados do usuário do Firebase
   Future<Map<String, dynamic>> getUserData(User user) async {
-    final doc = await FirebaseFirestore.instance.collection('usuarios').doc(user.uid).get();
+    final doc = await FirebaseFirestore.instance
+        .collection('usuarios')
+        .doc(user.uid)
+        .get();
     return doc.data() as Map<String, dynamic>;
   }
 
