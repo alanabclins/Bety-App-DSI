@@ -133,7 +133,7 @@ class _MainScreenState extends State<MainScreen> {
           MedicaoGlicoseScreen(user: user, userData: userData),
           ProfileScreen(user: user, userData: userData),
           // ProfileScreen(user: user, userData: userData),
-          MapaScreen(user: user, ),
+          MapaScreen(user: user),
         ];
 
         void _onItemTapped(int index) {
