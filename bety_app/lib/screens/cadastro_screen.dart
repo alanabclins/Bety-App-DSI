@@ -1,5 +1,8 @@
 import 'package:bety_sprint1/services/auth_service.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+
+import '../utils/custom_app_bar.dart';
 
 class CadastroScreen extends StatefulWidget {
   const CadastroScreen({super.key});
@@ -18,17 +21,38 @@ class _CadastroScreenState extends State<CadastroScreen> {
       TextEditingController();
   final TextEditingController _tipoDiabetesController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  bool _isPaciente = false;
-  bool _isCuidador = false;
 
   final AuthService _authService = AuthService();
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null) {
+      setState(() {
+        _dataNascimentoController.text =
+            DateFormat('dd/MM/yyyy').format(picked);
+      });
+    }
+  }
+
+  // Adicionando variáveis de estado para controlar a visibilidade das senhas
+  bool _isSenhaVisible = false;
+  bool _isConfirmaSenhaVisible = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Cadastro'),
-        backgroundColor: const Color.fromARGB(255, 11, 171, 124),
+      appBar: CustomAppBar(
+        mainTitle: 'Cadastro',
+        subtitle: 'faça o seu cadastro!',
+        showLogoutButton: false,
+        onBackButtonPressed: () {
+          Navigator.pop(context);
+        },
       ),
       body: Container(
         color: const Color.fromARGB(255, 251, 250, 243),
@@ -81,13 +105,24 @@ class _CadastroScreenState extends State<CadastroScreen> {
                 const SizedBox(height: 20),
                 TextFormField(
                   keyboardType: TextInputType.visiblePassword,
-                  obscureText: true,
+                  obscureText: !_isSenhaVisible,
                   obscuringCharacter: "*",
                   controller: _senhaController,
                   decoration: InputDecoration(
                     labelText: "Sua senha",
                     suffixIconColor: const Color.fromARGB(255, 11, 171, 124),
-                    suffixIcon: const Icon(Icons.remove_red_eye),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _isSenhaVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _isSenhaVisible = !_isSenhaVisible;
+                        });
+                      },
+                    ),
                     filled: true,
                     fillColor: const Color.fromARGB(255, 199, 244, 194),
                     border: OutlineInputBorder(
@@ -107,13 +142,24 @@ class _CadastroScreenState extends State<CadastroScreen> {
                 const SizedBox(height: 20),
                 TextFormField(
                   keyboardType: TextInputType.visiblePassword,
-                  obscureText: true,
+                  obscureText: !_isConfirmaSenhaVisible,
                   obscuringCharacter: "*",
                   controller: _confirmaSenhaController,
                   decoration: InputDecoration(
                     labelText: "Confirme sua senha",
                     suffixIconColor: const Color.fromARGB(255, 11, 171, 124),
-                    suffixIcon: const Icon(Icons.remove_red_eye),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _isConfirmaSenhaVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _isConfirmaSenhaVisible = !_isConfirmaSenhaVisible;
+                        });
+                      },
+                    ),
                     filled: true,
                     fillColor: const Color.fromARGB(255, 199, 244, 194),
                     border: OutlineInputBorder(
@@ -134,16 +180,23 @@ class _CadastroScreenState extends State<CadastroScreen> {
                 TextFormField(
                   controller: _dataNascimentoController,
                   decoration: InputDecoration(
-                    labelText: "Data de Nascimento",
+                    labelText: 'Data de nascimento',
                     filled: true,
                     fillColor: const Color.fromARGB(255, 199, 244, 194),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
+                    suffixIcon: IconButton(
+                      icon: Icon(Icons.calendar_today),
+                      onPressed: () {
+                        _selectDate(context);
+                      },
+                    ),
                   ),
+                  readOnly: true,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Por favor, insira sua data de nascimento';
+                      return 'Por favor, insira a data de nascimento';
                     }
                     return null;
                   },
@@ -166,31 +219,6 @@ class _CadastroScreenState extends State<CadastroScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 20),
-                CheckboxListTile(
-                  title: const Text("Paciente"),
-                  value: _isPaciente,
-                  onChanged: (value) {
-                    setState(() {
-                      _isPaciente = value ?? false;
-                      if (_isPaciente) {
-                        _isCuidador = false;
-                      }
-                    });
-                  },
-                ),
-                CheckboxListTile(
-                  title: const Text("Cuidador"),
-                  value: _isCuidador,
-                  onChanged: (value) {
-                    setState(() {
-                      _isCuidador = value ?? false;
-                      if (_isCuidador) {
-                        _isPaciente = false;
-                      }
-                    });
-                  },
-                ),
                 const SizedBox(height: 35),
                 SizedBox(
                   width: double.infinity,
@@ -204,7 +232,6 @@ class _CadastroScreenState extends State<CadastroScreen> {
                           nome: _nomeController.text,
                           dataNascimento: _dataNascimentoController.text,
                           tipoDiabetes: _tipoDiabetesController.text,
-                          isPaciente: _isPaciente,
                         );
 
                         if (result == null) {

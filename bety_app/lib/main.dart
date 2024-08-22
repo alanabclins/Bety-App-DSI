@@ -40,7 +40,12 @@ class MyApp extends StatelessWidget {
         '/cadastro': (context) => CadastroScreen(),
         '/home': (context) => MainScreen(),
         '/notificacao': (context) => NotificacaoScreen(),
-        '/registroGlicemia': (context) => MedicaoGlicoseScreen(),
+        '/registroGlicemia': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments
+              as Map<String, dynamic>;
+          return MedicaoGlicoseScreen(
+              user: args['user'], userData: args['userData']);
+        },
         '/recuperar_senha': (context) => RecuperarSenhaScreen(),
         '/perfil': (context) {
           // Obtenha os parâmetros passados para a tela ProfileScreen
@@ -125,8 +130,9 @@ class _MainScreenState extends State<MainScreen> {
         final List<Widget> _pages = [
           HomeScreen(user: user),
           NotificacaoScreen(),
-          MedicaoGlicoseScreen(),
+          MedicaoGlicoseScreen(user: user, userData: userData),
           ProfileScreen(user: user, userData: userData),
+          // ProfileScreen(user: user, userData: userData),
           MapaScreen(),
         ];
 
