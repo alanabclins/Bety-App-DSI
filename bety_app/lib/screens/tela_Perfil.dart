@@ -109,12 +109,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               SizedBox(height: 20),
-              GestureDetector(
-                onLongPress: _updateProfileImage,
-                child: CircleAvatar(
-                  radius: 50,
-                  backgroundImage: NetworkImage(userData['profile_image_url'] ??
-                      'https://example.com/default.jpg'),
+              CircleAvatar(
+                radius: 50,
+                backgroundImage: NetworkImage(userData['profile_image_url'] ??
+                    'https://example.com/default.jpg'),
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: _updateProfileImage,
+                child: Text('Atualizar foto de perfil'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color(0xFF0BAB7C),
+                  foregroundColor: Color(0xFFFBFAF3),
+                  padding: EdgeInsets.all(15),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               ),
               SizedBox(height: 20),

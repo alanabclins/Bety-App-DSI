@@ -191,7 +191,30 @@ class AuthService {
     }
   }
 
-  // Método para excluir uma refeição
+  Future<String?> atualizarRefeicao({
+  required String userId,
+  required String refeicaoId,
+  required DateTime hora,
+  required String descricao,
+}) async {
+  try {
+    await FirebaseFirestore.instance
+      .collection('usuarios')
+      .doc(userId)
+      .collection('refeicoes')
+      .doc(refeicaoId)
+      .update({
+        'hora': Timestamp.fromDate(hora),
+        'descricao': descricao,
+      });
+    return null;
+  } catch (e) {
+    return 'Erro ao atualizar refeição: $e';
+  }
+}
+
+
+   // Método para excluir uma refeição
   Future<String?> excluirRefeicao({
     required String userId,
     required String refeicaoId,
