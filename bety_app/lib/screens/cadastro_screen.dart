@@ -28,7 +28,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
-      firstDate: DateTime(2000),
+      firstDate: DateTime(1904),
       lastDate: DateTime(2101),
     );
     if (picked != null) {

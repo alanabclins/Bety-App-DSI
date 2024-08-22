@@ -57,6 +57,21 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
     }
   }
 
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1904),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null) {
+      setState(() {
+        _dataNascimentoController.text =
+            DateFormat('dd/MM/yyyy').format(picked);
+      });
+    }
+  }
+
   void _handleButtonPress() async {
     final currentUser = FirebaseAuth.instance.currentUser;
     final email = currentUser?.email;
@@ -142,19 +157,63 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
           children: [
             TextField(
               controller: _nomeController,
-              decoration: InputDecoration(labelText: 'Seu nome'),
+              decoration: InputDecoration(
+                labelText: 'Seu nome',
+                filled: true,
+                fillColor: const Color.fromARGB(255, 199, 244, 194),
+                border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                    ),
+                ),
             ),
+            const SizedBox(height: 20),
             TextField(
               controller: _tipoDiabetesController,
-              decoration: InputDecoration(labelText: 'Tipo de diabetes'),
+              decoration: InputDecoration(
+                labelText: 'Tipo de diabetes',
+                filled: true,
+                fillColor: const Color.fromARGB(255, 199, 244, 194),
+                border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                  )
+                ),
             ),
-            TextField(
+            const SizedBox(height: 20),
+            TextFormField(
               controller: _dataNascimentoController,
-              decoration: InputDecoration(labelText: 'Data de nascimento'),
+              decoration: InputDecoration(
+              labelText: 'Data de nascimento',
+              filled: true,
+              fillColor: const Color.fromARGB(255, 199, 244, 194),
+              border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+                ),
+                suffixIcon: IconButton(
+                  icon: Icon(Icons.calendar_today),
+                  onPressed: () {
+                    _selectDate(context);
+                  },
+                ),
+              ),
+              readOnly: true,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Por favor, insira a data de nascimento';
+                }
+                return null;
+              },
             ),
+            const SizedBox(height: 20),
             TextField(
               controller: _emailController,
-              decoration: InputDecoration(labelText: 'Email'),
+              decoration: InputDecoration(
+                labelText: 'Email',
+                filled: true,
+                fillColor: const Color.fromARGB(255, 199, 244, 194),
+                border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                  )
+                ),
             ),
             SizedBox(height: 20.0),
             Expanded(
@@ -285,7 +344,7 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
 ),
 
 
-            Spacer(),
+            const SizedBox(height: 30),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
