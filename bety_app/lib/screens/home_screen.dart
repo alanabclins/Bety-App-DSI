@@ -22,11 +22,33 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<Map<String, dynamic>> _getUserData() async {
-    final doc = await FirebaseFirestore.instance
+    // Obtém os dados do usuário
+    final userDoc = await FirebaseFirestore.instance
         .collection('usuarios')
         .doc(widget.user.uid)
         .get();
-    return doc.data() as Map<String, dynamic>;
+
+    // Obtém o último registro de glicose na subcoleção glucoseRecords
+    final glucoseRecordDoc = await FirebaseFirestore.instance
+        .collection('usuarios')
+        .doc(widget.user.uid)
+        .collection('glucoseRecords')
+        .orderBy('date',
+            descending: true) // Ordena por data para pegar o mais recente
+        .limit(1)
+        .get();
+
+    // Extrai os dados principais do usuário
+    Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+
+    // Adiciona o valor de glucose ao mapa de dados do usuário
+    if (glucoseRecordDoc.docs.isNotEmpty) {
+      userData['glucose'] = glucoseRecordDoc.docs.first.data()['glucose'];
+    } else {
+      userData['glucose'] = null; // Se não houver registros, define como null
+    }
+
+    return userData;
   }
 
   @override
@@ -53,6 +75,9 @@ class _HomeScreenState extends State<HomeScreen> {
           }
 
           final userData = snapshot.data!;
+          final lastGlucose = userData['glucose'] != null
+              ? 'Última: ${userData['glucose']} mg/dL'
+              : 'Sem registro de glicose';
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
@@ -86,7 +111,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   context,
                   icon: Icons.health_and_safety,
                   title: 'Registro de Glicemia',
-                  subtitle: 'Última: 110 mg/dL',
+                  subtitle: lastGlucose, // Aqui usamos o dado de glicose
                   onTap: () => Navigator.pushNamed(context, '/glicemia'),
                 ),
                 const SizedBox(height: 20),
@@ -262,7 +287,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           IconButton(
-                            icon: Icon(Icons.edit, color: Colors.orange),
+                            icon: Icon(Icons.edit,
+                                color: const Color(0xFFFBFAF3)),
                             onPressed: () => _addOrEditNote(
                               noteId: doc.id,
                               currentText: note['text'],
@@ -288,12 +314,13 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildAddNoteButton(BuildContext context) {
     return ElevatedButton.icon(
       onPressed: () => _addOrEditNote(),
-      icon: Icon(Icons.add),
-      label: Text('Adicionar Nota'),
+      icon: Icon(Icons.add, color: Color(0xFFFBFAF3)),
+      label: Text(
+        'Adicionar nota',
+        style: TextStyle(color: Color(0xFFFBFAF3)),
+      ),
       style: ElevatedButton.styleFrom(
-        foregroundColor: Colors.white,
-        backgroundColor: Color(0xFF0BAB7C), // Cor do texto e ícone
-        padding: EdgeInsets.symmetric(vertical: 16.0),
+        backgroundColor: Color(0xFF0BAB7C),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20.0),
         ),
@@ -301,37 +328,38 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<void> _addOrEditNote({String? noteId, String? currentText}) async {
-    final TextEditingController controller = TextEditingController(
-      text: currentText ?? '',
-    );
+  void _addOrEditNote({String? noteId, String? currentText}) {
+    final TextEditingController _noteController =
+        TextEditingController(text: currentText ?? '');
 
-    await showDialog(
+    showDialog(
       context: context,
-      builder: (context) {
+      builder: (BuildContext context) {
         return AlertDialog(
-          title: Text(noteId == null ? 'Adicionar Nota' : 'Editar Nota'),
+          title: Text(noteId != null ? 'Editar Nota' : 'Adicionar Nota'),
           content: TextField(
-            controller: controller,
+            controller: _noteController,
             decoration: InputDecoration(
-              hintText: 'Escreva sua nota aqui...',
+              hintText: 'Digite sua nota aqui',
             ),
-            maxLines: 3,
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
               child: Text('Cancelar'),
             ),
-            TextButton(
+            ElevatedButton(
               onPressed: () {
-                final text = controller.text.trim();
-                if (text.isNotEmpty) {
-                  _saveNote(noteId, text);
-                  Navigator.of(context).pop();
+                if (noteId != null) {
+                  _updateNote(noteId, _noteController.text);
+                } else {
+                  _saveNote(_noteController.text);
                 }
+                Navigator.of(context).pop();
               },
-              child: Text(noteId == null ? 'Adicionar' : 'Salvar'),
+              child: Text('Salvar'),
             ),
           ],
         );
@@ -339,27 +367,35 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<void> _saveNote(String? noteId, String text) async {
-    final collectionRef = FirebaseFirestore.instance
-        .collection('usuarios')
-        .doc(widget.user.uid)
-        .collection('notas');
-
-    if (noteId == null) {
-      // Adicionar nova nota
-      await collectionRef.add({
+  Future<void> _saveNote(String text) async {
+    if (text.isNotEmpty) {
+      final newNote = {
         'text': text,
-        'timestamp': FieldValue.serverTimestamp(),
-      });
-    } else {
-      // Atualizar nota existente
-      await collectionRef.doc(noteId).update({
-        'text': text,
-        'timestamp': FieldValue.serverTimestamp(),
-      });
+        'timestamp': Timestamp.now(),
+      };
+      await FirebaseFirestore.instance
+          .collection('usuarios')
+          .doc(widget.user.uid)
+          .collection('notas')
+          .add(newNote);
+      setState(() {});
     }
+  }
 
-    setState(() {});
+  Future<void> _updateNote(String noteId, String newText) async {
+    if (newText.isNotEmpty) {
+      final updatedNote = {
+        'text': newText,
+        'timestamp': Timestamp.now(),
+      };
+      await FirebaseFirestore.instance
+          .collection('usuarios')
+          .doc(widget.user.uid)
+          .collection('notas')
+          .doc(noteId)
+          .update(updatedNote);
+      setState(() {});
+    }
   }
 
   Future<void> _deleteNote(String noteId) async {
@@ -369,7 +405,6 @@ class _HomeScreenState extends State<HomeScreen> {
         .collection('notas')
         .doc(noteId)
         .delete();
-
     setState(() {});
   }
 }

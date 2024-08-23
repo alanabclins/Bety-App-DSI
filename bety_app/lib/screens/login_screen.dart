@@ -133,7 +133,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             } else {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text('Erro: $result'),
+                                  content: Text('Usuário ou senha inválida'),
                                 ),
                               );
                             }
