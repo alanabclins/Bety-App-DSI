@@ -1,7 +1,10 @@
 import 'package:bety_sprint1/utils/custom_app_bar.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class HomeScreen extends StatefulWidget {
   final User user;
@@ -14,6 +17,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late Future<Map<String, dynamic>> _userData;
+  File? _selectedImage;
 
   @override
   void initState() {
@@ -22,30 +26,25 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<Map<String, dynamic>> _getUserData() async {
-    // Obtém os dados do usuário
     final userDoc = await FirebaseFirestore.instance
         .collection('usuarios')
         .doc(widget.user.uid)
         .get();
 
-    // Obtém o último registro de glicose na subcoleção glucoseRecords
     final glucoseRecordDoc = await FirebaseFirestore.instance
         .collection('usuarios')
         .doc(widget.user.uid)
         .collection('glucoseRecords')
-        .orderBy('date',
-            descending: true) // Ordena por data para pegar o mais recente
+        .orderBy('date', descending: true)
         .limit(1)
         .get();
 
-    // Extrai os dados principais do usuário
     Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
 
-    // Adiciona o valor de glucose ao mapa de dados do usuário
     if (glucoseRecordDoc.docs.isNotEmpty) {
       userData['glucose'] = glucoseRecordDoc.docs.first.data()['glucose'];
     } else {
-      userData['glucose'] = null; // Se não houver registros, define como null
+      userData['glucose'] = null;
     }
 
     return userData;
@@ -58,9 +57,7 @@ class _HomeScreenState extends State<HomeScreen> {
         mainTitle: 'Home',
         subtitle: '',
         showLogoutButton: false,
-        onBackButtonPressed: () {
-          // Implementar ação para voltar, se necessário
-        },
+        onBackButtonPressed: () {},
         backgroundColor: Color(0xFF0BAB7C),
       ),
       body: FutureBuilder<Map<String, dynamic>>(
@@ -111,7 +108,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   context,
                   icon: Icons.health_and_safety,
                   title: 'Registro de Glicemia',
-                  subtitle: lastGlucose, // Aqui usamos o dado de glicose
+                  subtitle: lastGlucose,
                   onTap: () => Navigator.pushNamed(context, '/glicemia'),
                 ),
                 const SizedBox(height: 20),
@@ -216,7 +213,7 @@ class _HomeScreenState extends State<HomeScreen> {
         final notes = snapshot.data!.docs;
 
         return SizedBox(
-          height: 200, // Altura do carrossel
+          height: 225, // Altura do carrossel
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             itemCount: notes.length,
@@ -269,12 +266,22 @@ class _HomeScreenState extends State<HomeScreen> {
                                     color: Colors.white,
                                   ),
                                 ),
-                                SizedBox(height: 5),
+                                if (note['imageUrl'] != null)
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 8.0),
+                                    child: ElevatedButton(
+                                      onPressed: () {
+                                        _showImageDialog(note['imageUrl']!);
+                                      },
+                                      child: Text('Visualizar Imagem'),
+                                    ),
+                                  ),
                                 Text(
-                                  '${date.day}/${date.month}/${date.year} - ${date.hour}:${date.minute}',
+                                  'Data: ${date.day}/${date.month}/${date.year}',
                                   style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.white,
+                                    fontSize: 14,
+                                    color: Colors.white70,
                                   ),
                                 ),
                               ],
@@ -287,16 +294,22 @@ class _HomeScreenState extends State<HomeScreen> {
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           IconButton(
-                            icon: Icon(Icons.edit,
-                                color: const Color(0xFFFBFAF3)),
-                            onPressed: () => _addOrEditNote(
-                              noteId: doc.id,
-                              currentText: note['text'],
-                            ),
+                            icon: Icon(Icons.edit, color: Colors.white),
+                            onPressed: () {
+                              _addOrEditNote(
+                                noteId: doc.id,
+                                currentText: note['text'],
+                                currentImageUrl: note['imageUrl'],
+                              );
+                            },
                           ),
                           IconButton(
-                            icon: Icon(Icons.delete, color: Colors.red),
-                            onPressed: () => _deleteNote(doc.id),
+                            icon: Icon(Icons.delete,
+                                color: const Color.fromARGB(255, 255, 12, 12)),
+                            onPressed: () async {
+                              await _deleteNote(doc.id);
+                              setState(() {});
+                            },
                           ),
                         ],
                       ),
@@ -311,91 +324,158 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildAddNoteButton(BuildContext context) {
-    return ElevatedButton.icon(
-      onPressed: () => _addOrEditNote(),
-      icon: Icon(Icons.add, color: Color(0xFFFBFAF3)),
-      label: Text(
-        'Adicionar nota',
-        style: TextStyle(color: Color(0xFFFBFAF3)),
-      ),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Color(0xFF0BAB7C),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20.0),
-        ),
-      ),
-    );
-  }
-
-  void _addOrEditNote({String? noteId, String? currentText}) {
-    final TextEditingController _noteController =
-        TextEditingController(text: currentText ?? '');
-
+  void _showImageDialog(String imageUrl) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(noteId != null ? 'Editar Nota' : 'Adicionar Nota'),
-          content: TextField(
-            controller: _noteController,
-            decoration: InputDecoration(
-              hintText: 'Digite sua nota aqui',
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: GestureDetector(
+            onTap: () => Navigator.of(context).pop(),
+            child: Container(
+              width: double.infinity,
+              height: double.infinity,
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  image: NetworkImage(imageUrl),
+                  fit: BoxFit.contain,
+                ),
+              ),
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text('Cancelar'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (noteId != null) {
-                  _updateNote(noteId, _noteController.text);
-                } else {
-                  _saveNote(_noteController.text);
-                }
-                Navigator.of(context).pop();
-              },
-              child: Text('Salvar'),
-            ),
-          ],
         );
       },
     );
   }
 
-  Future<void> _saveNote(String text) async {
-    if (text.isNotEmpty) {
-      final newNote = {
-        'text': text,
-        'timestamp': Timestamp.now(),
-      };
-      await FirebaseFirestore.instance
-          .collection('usuarios')
-          .doc(widget.user.uid)
-          .collection('notas')
-          .add(newNote);
-      setState(() {});
-    }
+  Widget _buildAddNoteButton(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        _addOrEditNote();
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16.0),
+        decoration: BoxDecoration(
+          color: Color(0xFFC7F4C2),
+          borderRadius: BorderRadius.circular(20.0),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 8.0,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Center(
+          child: Text(
+            'Adicionar Nota',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF0BAB7C),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
-  Future<void> _updateNote(String noteId, String newText) async {
-    if (newText.isNotEmpty) {
-      final updatedNote = {
-        'text': newText,
-        'timestamp': Timestamp.now(),
-      };
-      await FirebaseFirestore.instance
-          .collection('usuarios')
-          .doc(widget.user.uid)
-          .collection('notas')
-          .doc(noteId)
-          .update(updatedNote);
-      setState(() {});
+  void _addOrEditNote({
+    String? noteId,
+    String? currentText,
+    String?
+        currentImageUrl, // Agora estamos recebendo a URL da imagem existente
+  }) {
+    TextEditingController textController =
+        TextEditingController(text: currentText);
+
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: textController,
+                decoration: InputDecoration(
+                  hintText: 'Escreva sua nota...',
+                ),
+              ),
+              SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: () async {
+                  final pickedImage = await ImagePicker().pickImage(
+                    source: ImageSource.gallery,
+                  );
+                  if (pickedImage != null) {
+                    setState(() {
+                      _selectedImage = File(pickedImage.path);
+                    });
+                  }
+                },
+                child: Text('Selecionar Imagem'),
+              ),
+              SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: () async {
+                  if (noteId == null) {
+                    await _saveNote(
+                      textController.text,
+                      _selectedImage,
+                    );
+                  } else {
+                    await _updateNote(
+                      noteId,
+                      textController.text,
+                      currentImageUrl, // Passando a URL da imagem existente
+                    );
+                  }
+                  Navigator.pop(context);
+                  setState(() {});
+                },
+                child: Text(noteId == null ? 'Salvar Nota' : 'Atualizar Nota'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _saveNote(String text, File? imageFile) async {
+    String? imageUrl;
+    if (imageFile != null) {
+      imageUrl = await _uploadImage(imageFile);
     }
+
+    await FirebaseFirestore.instance
+        .collection('usuarios')
+        .doc(widget.user.uid)
+        .collection('notas')
+        .add({
+      'text': text,
+      'imageUrl': imageUrl,
+      'timestamp': Timestamp.now(),
+    });
+  }
+
+  Future<void> _updateNote(
+    String noteId,
+    String text,
+    String? imageUrl,
+  ) async {
+    await FirebaseFirestore.instance
+        .collection('usuarios')
+        .doc(widget.user.uid)
+        .collection('notas')
+        .doc(noteId)
+        .update({
+      'text': text,
+      'imageUrl': imageUrl,
+      'timestamp': Timestamp.now(),
+    });
   }
 
   Future<void> _deleteNote(String noteId) async {
@@ -405,6 +485,22 @@ class _HomeScreenState extends State<HomeScreen> {
         .collection('notas')
         .doc(noteId)
         .delete();
-    setState(() {});
+  }
+
+  Future<String> _uploadImage(File imageFile) async {
+    final storageRef = FirebaseStorage.instance
+        .ref()
+        .child('notesImages')
+        .child(widget.user.uid)
+        .child('${DateTime.now().millisecondsSinceEpoch}.jpg');
+
+    final uploadTask = storageRef.putFile(imageFile);
+    final snapshot = await uploadTask.whenComplete(() {});
+    return await snapshot.ref.getDownloadURL();
+  }
+
+  Future<void> _deleteImage(String imageUrl) async {
+    final storageRef = FirebaseStorage.instance.refFromURL(imageUrl);
+    await storageRef.delete();
   }
 }
