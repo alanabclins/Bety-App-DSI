@@ -6,6 +6,7 @@ import 'package:bety_sprint1/services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:bety_sprint1/utils/alert_dialog.dart';
+import 'package:bety_sprint1/screens/adicionar_refeicao_screen.dart';
 
 class DadosCadastraisScreen extends StatefulWidget {
   final User user;
@@ -56,6 +57,21 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
     }
   }
 
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1904),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null) {
+      setState(() {
+        _dataNascimentoController.text =
+            DateFormat('dd/MM/yyyy').format(picked);
+      });
+    }
+  }
+
   void _handleButtonPress() async {
     final currentUser = FirebaseAuth.instance.currentUser;
     final email = currentUser?.email;
@@ -98,91 +114,17 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
   }
 
   void _addNewRefeicao() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        final TextEditingController descricaoController = TextEditingController();
-        TimeOfDay? selectedTime;
-
-        Future<void> _selectTime(BuildContext context) async {
-          final TimeOfDay? picked = await showTimePicker(
-            context: context,
-            initialTime: TimeOfDay.now(),
-            builder: (BuildContext context, Widget? child) {
-              return MediaQuery(
-                data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
-                child: child!,
-              );
-            },
-          );
-          if (picked != null && picked != selectedTime) {
-            setState(() {
-              selectedTime = picked;
-            });
-          }
-        }
-
-        return AlertDialog(
-          title: Text('Adicionar Nova Refeição'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: descricaoController,
-                decoration: InputDecoration(labelText: 'Descrição'),
-              ),
-              SizedBox(height: 10),
-              Text(
-                selectedTime != null
-                    ? 'Hora selecionada: ${selectedTime!.format(context)}'
-                    : 'Nenhuma hora selecionada',
-              ),
-              TextButton(
-                onPressed: () => _selectTime(context),
-                child: Text('Escolher Hora'),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text('Cancelar'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (selectedTime != null) {
-                  final now = DateTime.now();
-                  final DateTime hora = DateTime(
-                    now.year,
-                    now.month,
-                    now.day,
-                    selectedTime!.hour,
-                    selectedTime!.minute,
-                  );
-
-                  await _authService.registrarRefeicao(
-                    userId: widget.user.uid,
-                    hora: hora,
-                    descricao: descricaoController.text,
-                  );
-                  setState(() {
-                    _refeicoesFuture = _authService.obterRefeicoes(widget.user.uid);
-                  });
-                  Navigator.of(context).pop();
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Por favor, selecione uma hora')),
-                  );
-                }
-              },
-              child: Text('Adicionar'),
-            ),
-          ],
-        );
-      },
-    );
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AdicionarRefeicaoScreen(userId: widget.user.uid),
+      ),
+    ).then((_) {
+      // Atualize o estado após retornar da nova tela
+      setState(() {
+        _refeicoesFuture = _authService.obterRefeicoes(widget.user.uid);
+      });
+    });
   }
 
   void _handleExcluirRefeicao(String refeicaoId) async {
@@ -215,127 +157,194 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
           children: [
             TextField(
               controller: _nomeController,
-              decoration: InputDecoration(labelText: 'Seu nome'),
+              decoration: InputDecoration(
+                labelText: 'Seu nome',
+                filled: true,
+                fillColor: const Color.fromARGB(255, 199, 244, 194),
+                border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                    ),
+                ),
             ),
+            const SizedBox(height: 20),
             TextField(
               controller: _tipoDiabetesController,
-              decoration: InputDecoration(labelText: 'Tipo de diabetes'),
+              decoration: InputDecoration(
+                labelText: 'Tipo de diabetes',
+                filled: true,
+                fillColor: const Color.fromARGB(255, 199, 244, 194),
+                border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                  )
+                ),
             ),
-            TextField(
+            const SizedBox(height: 20),
+            TextFormField(
               controller: _dataNascimentoController,
-              decoration: InputDecoration(labelText: 'Data de nascimento'),
+              decoration: InputDecoration(
+              labelText: 'Data de nascimento',
+              filled: true,
+              fillColor: const Color.fromARGB(255, 199, 244, 194),
+              border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+                ),
+                suffixIcon: IconButton(
+                  icon: Icon(Icons.calendar_today),
+                  onPressed: () {
+                    _selectDate(context);
+                  },
+                ),
+              ),
+              readOnly: true,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Por favor, insira a data de nascimento';
+                }
+                return null;
+              },
             ),
+            const SizedBox(height: 20),
             TextField(
               controller: _emailController,
-              decoration: InputDecoration(labelText: 'Email'),
+              decoration: InputDecoration(
+                labelText: 'Email',
+                filled: true,
+                fillColor: const Color.fromARGB(255, 199, 244, 194),
+                border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                  )
+                ),
             ),
             SizedBox(height: 20.0),
             Expanded(
-              child: FutureBuilder<List<Map<String, dynamic>>>(
-                future: _refeicoesFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Center(child: CircularProgressIndicator());
-                  } else if (snapshot.hasError) {
-                    return Center(child: Text('Erro ao carregar refeições'));
-                  }
+  child: FutureBuilder<List<Map<String, dynamic>>>(
+    future: _refeicoesFuture,
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return Center(child: CircularProgressIndicator());
+      } else if (snapshot.hasError) {
+        return Center(child: Text('Erro ao carregar refeições'));
+      }
 
-                  final refeicoes = snapshot.data ?? [];
-                  return CarouselSlider(
-                    options: CarouselOptions(
-                      height: 200.0,
-                      autoPlay: true,
-                      enlargeCenterPage: true,
-                      aspectRatio: 16/9,
-                      viewportFraction: 0.8,
+      final refeicoes = snapshot.data ?? [];
+      return CarouselSlider(
+        options: CarouselOptions(
+          height: 200.0,
+          autoPlay: true,
+          enlargeCenterPage: true,
+          aspectRatio: 16/9,
+          viewportFraction: 0.8,
+        ),
+        items: [
+          ...refeicoes.map((refeicao) {
+            final hora = (refeicao['hora'] as Timestamp).toDate();
+            final horaFormatada = DateFormat('HH:mm').format(hora);
+            final refeicaoId = refeicao['refeicaoId'];
+
+            return Builder(
+              builder: (BuildContext context) {
+                return Container(
+                  width: 200.0,
+                  child: Card(
+                    color: Color(0xFF0BAB7C),
+                    child: Stack(
+                      children: [
+                        Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(height: 18.0),
+                              Text(
+                                refeicao['descricao'] ?? 'Sem descrição',
+                                style: TextStyle(fontSize: 20.0, color: Colors.white),
+                                textAlign: TextAlign.center,
+                              ),
+                              SizedBox(height: 10.0),
+                              Text(
+                                horaFormatada,
+                                style: TextStyle(fontSize: 18.0, color: Colors.white),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Positioned(
+                          left: 10,
+                          top: 10,
+                          child: IconButton(
+                            icon: Icon(Icons.edit, color: Colors.white),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => AdicionarRefeicaoScreen(
+                                    userId: widget.user.uid,
+                                    refeicao: refeicao,
+                                  ),
+                                ),
+                              ).then((_) {
+                                setState(() {
+                                  _refeicoesFuture = _authService.obterRefeicoes(widget.user.uid);
+                                });
+                              });
+                            },
+                          ),
+                        ),
+                        Positioned(
+                          right: 10,
+                          top: 10,
+                          child: IconButton(
+                            icon: Icon(Icons.delete, color: Colors.white),
+                            onPressed: () {
+                              CustomAlertDialog.show(
+                                context: context,
+                                title: 'Excluir refeição',
+                                content: 'Você tem certeza que deseja excluir esta refeição?',
+                                onConfirm: () {
+                                  _handleExcluirRefeicao(refeicaoId);
+                                },
+                              );
+                            },
+                          ),
+                        ),
+                      ],
                     ),
-                    items: [
-                      ...refeicoes.map((refeicao) {
-                        final hora = (refeicao['hora'] as Timestamp).toDate();
-                        final horaFormatada = DateFormat('HH:mm').format(hora);
-                        final refeicaoId = refeicao['refeicaoId'];
+                  ),
+                );
+              },
+            );
+          }).toList(),
+          Builder(
+            builder: (BuildContext context) {
+              return Container(
+                width: 300.0,
+                child: Card(
+                  color: Color(0xFF0BAB7C),
+                  child: InkWell(
+                    onTap: _addNewRefeicao,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.add, size: 50.0, color: Colors.white),
+                        SizedBox(height: 10.0),
+                        Text(
+                          'Adicionar nova refeição',
+                          style: TextStyle(fontSize: 18.0, color: Colors.white),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      );
+    },
+  ),
+),
 
-                        return Builder(
-                          builder: (BuildContext context) {
-                            return Container(
-                              width: 200.0,
-                              child: Card(
-                                color: Color(0xFF0BAB7C),
-                                child: Stack(
-                                  children: [
-                                    Center(
-                                      child: Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          SizedBox(height: 18.0),
-                                          Text(
-                                            refeicao['descricao'] ?? 'Sem descrição',
-                                            style: TextStyle(fontSize: 20.0, color: Colors.white),
-                                            textAlign: TextAlign.center,
-                                          ),
-                                          SizedBox(height: 10.0),
-                                          Text(
-                                            horaFormatada,
-                                            style: TextStyle(fontSize: 18.0, color: Colors.white),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    Positioned(
-                                      right: 10,
-                                      top: 10,
-                                      child: IconButton(
-                                        icon: Icon(Icons.delete, color: Colors.white),
-                                        onPressed: () {
-                                          print('ID da refeição para exclusão: $refeicaoId');
-                                          CustomAlertDialog.show(
-                                            context: context,
-                                            title: 'Excluir refeição',
-                                            content: 'Você tem certeza que deseja excluir esta refeição?',
-                                            onConfirm: () {
-                                              _handleExcluirRefeicao(refeicaoId);
-                                            },
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        );
-                      }).toList(),
-                      Builder(
-                        builder: (BuildContext context) {
-                          return Container(
-                            width: 300.0,
-                            child: Card(
-                              color: Color(0xFF0BAB7C),
-                              child: InkWell(
-                                onTap: _addNewRefeicao,
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.add, size: 50.0, color: Colors.white),
-                                    SizedBox(height: 10.0),
-                                    Text(
-                                      'Adicionar nova refeição',
-                                      style: TextStyle(fontSize: 18.0, color: Colors.white),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ),
-            Spacer(),
+
+            const SizedBox(height: 30),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [

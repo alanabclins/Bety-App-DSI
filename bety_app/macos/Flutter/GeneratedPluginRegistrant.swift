@@ -14,6 +14,10 @@ import flutter_local_notifications
 import flutter_native_timezone
 =======
 import firebase_storage
+<<<<<<< HEAD
+>>>>>>> main
+=======
+import geolocator_apple
 >>>>>>> main
 
 func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
@@ -26,5 +30,9 @@ func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
   FlutterNativeTimezonePlugin.register(with: registry.registrar(forPlugin: "FlutterNativeTimezonePlugin"))
 =======
   FLTFirebaseStoragePlugin.register(with: registry.registrar(forPlugin: "FLTFirebaseStoragePlugin"))
+<<<<<<< HEAD
+>>>>>>> main
+=======
+  GeolocatorPlugin.register(with: registry.registrar(forPlugin: "GeolocatorPlugin"))
 >>>>>>> main
 }

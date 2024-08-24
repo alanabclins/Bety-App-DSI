@@ -1,13 +1,9 @@
+import 'package:bety_sprint1/screens/recuperar_senha.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'firebase_options.dart';
-<<<<<<< HEAD
-import 'package:provider/provider.dart';
-import 'notification_service.dart'; 
-
-=======
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/cadastro_screen.dart';
@@ -15,7 +11,6 @@ import 'screens/notificacao_screen.dart';
 import 'screens/registro_glicemia.dart';
 import 'screens/mapa-screen.dart';
 import 'screens/tela_Perfil.dart'; // Certifique-se de importar a tela correta
->>>>>>> main
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,6 +39,7 @@ class MyApp extends StatelessWidget {
       title: 'Flutter Demo',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
+<<<<<<< HEAD
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
         fontFamily: 'Poppins',
@@ -51,16 +47,29 @@ class MyApp extends StatelessWidget {
 <<<<<<< HEAD
       home: NotificacaoScreen(),
 =======
+=======
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+          useMaterial3: true,
+          fontFamily: 'Poppins',
+          scaffoldBackgroundColor: const Color(0xFFFBFAF3)),
+>>>>>>> main
       home: RoteadorTelas(),
       routes: {
         '/login': (context) => LoginScreen(),
         '/cadastro': (context) => CadastroScreen(),
         '/home': (context) => MainScreen(),
         '/notificacao': (context) => NotificacaoScreen(),
-        '/registroGlicemia': (context) => MedicaoGlicoseScreen(),
+        '/registroGlicemia': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments
+              as Map<String, dynamic>;
+          return MedicaoGlicoseScreen(
+              user: args['user'], userData: args['userData']);
+        },
+        '/recuperar_senha': (context) => RecuperarSenhaScreen(),
         '/perfil': (context) {
           // Obtenha os parâmetros passados para a tela ProfileScreen
-          final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+          final args = ModalRoute.of(context)!.settings.arguments
+              as Map<String, dynamic>;
           return ProfileScreen(user: args['user'], userData: args['userData']);
         },
       },
@@ -102,7 +111,10 @@ class _MainScreenState extends State<MainScreen> {
 
   // Função para obter os dados do usuário do Firebase
   Future<Map<String, dynamic>> getUserData(User user) async {
-    final doc = await FirebaseFirestore.instance.collection('usuarios').doc(user.uid).get();
+    final doc = await FirebaseFirestore.instance
+        .collection('usuarios')
+        .doc(user.uid)
+        .get();
     return doc.data() as Map<String, dynamic>;
   }
 
@@ -137,9 +149,10 @@ class _MainScreenState extends State<MainScreen> {
         final List<Widget> _pages = [
           HomeScreen(user: user),
           NotificacaoScreen(),
-          MedicaoGlicoseScreen(),
+          MedicaoGlicoseScreen(user: user, userData: userData),
           ProfileScreen(user: user, userData: userData),
-          MapaScreen(),
+          // ProfileScreen(user: user, userData: userData),
+          MapaScreen(user: user),
         ];
 
         void _onItemTapped(int index) {

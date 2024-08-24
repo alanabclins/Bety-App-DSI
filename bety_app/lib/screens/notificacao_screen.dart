@@ -1,4 +1,5 @@
-import 'package:bety_sprint1/utils/custom_app_bar.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import '../notification_service.dart';
 import 'package:provider/provider.dart';
@@ -25,7 +26,6 @@ class _NotificacaoScreenState extends State<NotificacaoScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-<<<<<<< HEAD
       appBar: AppBar(
         title: Text(
           'Notificações',
@@ -41,16 +41,8 @@ class _NotificacaoScreenState extends State<NotificacaoScreen> {
             Navigator.pop(context); // Voltar pra tela anterior
           },
         ),
-=======
-      appBar: CustomAppBar(
-        mainTitle: 'Notificação',
-        subtitle: 'Se atente às suas notificações!',
-        showLogoutButton: false,
-        onBackButtonPressed: () {
-          Navigator.pushNamed(context, '/home');
-        },
->>>>>>> main
       ),
+<<<<<<< HEAD
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16),
         child: Column(
@@ -110,6 +102,50 @@ class _NotificacaoScreenState extends State<NotificacaoScreen> {
             ),
           ],
         ),
+=======
+      body: StreamBuilder<QuerySnapshot>(
+        stream: _firestore.collection('notificacoes').snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          }
+
+          if (snapshot.hasError) {
+            return Center(child: Text('Erro ao carregar notificações'));
+          }
+
+          final notificacoes = snapshot.data?.docs ?? [];
+
+          return ListView.builder(
+            padding: EdgeInsets.all(16),
+            itemCount: notificacoes.length,
+            itemBuilder: (context, index) {
+              final notificacao = notificacoes[index];
+              return Card(
+                color: Color.fromARGB(255, 199, 244, 194),
+                child: ListTile(
+                  title: Text(notificacao['title']),
+                  subtitle: Text(notificacao['body']),
+                  trailing: IconButton(
+                    icon: Icon(Icons.delete),
+                    onPressed: () => _deleteNotification(notificacao.id),
+                  ),
+                ),
+              );
+            },
+          );
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          _sendNotification(
+            'Hora de Refeição',
+            'Está na hora de tomar sua refeição programada!',
+          );
+        },
+        child: Icon(Icons.add),
+        backgroundColor: Color(0xFF0BAB7C),
+>>>>>>> main
       ),
     );
   }
