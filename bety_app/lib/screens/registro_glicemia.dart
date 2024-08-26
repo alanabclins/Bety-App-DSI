@@ -17,13 +17,33 @@ class _MedicaoGlicoseScreenState extends State<MedicaoGlicoseScreen> {
   final TextEditingController _searchController = TextEditingController();
   DateTime? _selectedDate;
 
-  void _deleteRecord(String id) async {
-    await FirebaseFirestore.instance
-        .collection('usuarios')
-        .doc(widget.user.uid)
-        .collection('glucoseRecords')
-        .doc(id)
-        .delete();
+  Future<void> _confirmDeleteRecord(String id) async {
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmar exclusão'),
+        content: const Text('Tem certeza de que deseja excluir este registro?'),
+        actions: [
+          TextButton(
+            child: const Text('Cancelar'),
+            onPressed: () => Navigator.of(context).pop(false),
+          ),
+          TextButton(
+            child: const Text('Excluir'),
+            onPressed: () => Navigator.of(context).pop(true),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await FirebaseFirestore.instance
+          .collection('usuarios')
+          .doc(widget.user.uid)
+          .collection('glucoseRecords')
+          .doc(id)
+          .delete();
+    }
   }
 
   void _clearSearch() {
@@ -114,77 +134,85 @@ class _MedicaoGlicoseScreenState extends State<MedicaoGlicoseScreen> {
                     }).toList();
                   }
 
+                  if (records.isEmpty) {
+                    return Center(
+                      child: Text('Não há registros para o dia ${_searchController.text}'),
+                    );
+                  }
+
                   return ListView.builder(
                     itemCount: records.length,
                     itemBuilder: (context, index) {
                       final record = records[index];
-                      return Card(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10.0),
+                      return Dismissible(
+                        key: Key(record.id),
+                        direction: DismissDirection.endToStart,
+                        onDismissed: (direction) {
+                          _confirmDeleteRecord(record.id);
+                        },
+                        background: Container(
+                          color: Colors.red,
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                          child: const Icon(Icons.delete, color: Colors.white),
                         ),
-                        margin: const EdgeInsets.all(8.0),
-                        color: Colors.lightGreen[100],
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16.0, vertical: 24.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(8.0),
-                                    decoration: BoxDecoration(
-                                      color: Colors.green[800],
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Text(
-                                      record['date'],
-                                      style: const TextStyle(color: Colors.white),
-                                    ),
+                        child: Card(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15.0),
+                          ),
+                          margin: const EdgeInsets.all(12.0),
+                          color: const Color(0xFF0BAB7C), // Aplicando a cor verde
+                          child: Padding(
+                            padding: const EdgeInsets.all(20.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Registro de ${record['date']} às ${record['time']}',
+                                  style: const TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 16.0,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white, // Mudando a cor do texto para branco
                                   ),
-                                  Text(
-                                    'Medição realizada às ${record['time']}',
-                                    style: const TextStyle(
-                                      fontFamily: 'Poppins',
-                                      fontSize: 14.4,
-                                      fontWeight: FontWeight.w700,
-                                      height: 17.28 / 14.4,
-                                      textBaseline: TextBaseline.alphabetic,
-                                    ),
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Concentração de glicose: ${record['glucose']} mg/dL',
+                                  style: const TextStyle(
+                                    fontSize: 16.0,
+                                    color: Colors.white, // Mantendo a cor branca para legibilidade
                                   ),
-                                  Row(
-                                    children: [
-                                      IconButton(
-                                        icon: const Icon(Icons.edit),
-                                        onPressed: () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) => EditRecordScreen(
-                                                user: widget.user,
-                                                recordId: record.id,
-                                                recordData: record.data()
-                                                    as Map<String, dynamic>,
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                      IconButton(
-                                        icon: const Icon(Icons.close),
-                                        onPressed: () => _deleteRecord(record.id),
-                                      ),
-                                    ],
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Tipo de medição: ${record['measurementType']}',
+                                  style: const TextStyle(
+                                    fontSize: 16.0,
+                                    color: Colors.white,
                                   ),
-                                ],
-                              ),
-                              const SizedBox(height: 16),
-                              Text('Concentração de glicose: ${record['glucose']} mg/dL'),
-                              const SizedBox(height: 8),
-                              Text('Tipo de medição: ${record['measurementType']}'),
-                            ],
+                                ),
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: IconButton(
+                                    icon: const Icon(Icons.edit, color: Colors.white),
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => EditRecordScreen(
+                                            user: widget.user,
+                                            recordId: record.id,
+                                            recordData: record.data()
+                                                as Map<String, dynamic>,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       );
@@ -226,6 +254,7 @@ class _MedicaoGlicoseScreenState extends State<MedicaoGlicoseScreen> {
     );
   }
 }
+
 
 class EditRecordScreen extends StatefulWidget {
   final User user;
@@ -297,7 +326,25 @@ class _EditRecordScreenState extends State<EditRecordScreen> {
   }
 
   Future<void> _submit() async {
-    if (_formKey.currentState!.validate()) {
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmar edição'),
+        content: const Text('Tem certeza de que deseja salvar as alterações?'),
+        actions: [
+          TextButton(
+            child: const Text('Cancelar'),
+            onPressed: () => Navigator.of(context).pop(false),
+          ),
+          TextButton(
+            child: const Text('Salvar'),
+            onPressed: () => Navigator.of(context).pop(true),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && _formKey.currentState!.validate()) {
       await FirebaseFirestore.instance
           .collection('usuarios')
           .doc(widget.user.uid)
@@ -309,6 +356,36 @@ class _EditRecordScreenState extends State<EditRecordScreen> {
         'glucose': int.parse(_glucoseController.text),
         'measurementType': _selectedMeasurementType,
       });
+      Navigator.of(context).pop();
+    }
+  }
+
+  Future<void> _confirmDeleteRecord() async {
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmar exclusão'),
+        content: const Text('Tem certeza de que deseja excluir este registro?'),
+        actions: [
+          TextButton(
+            child: const Text('Cancelar'),
+            onPressed: () => Navigator.of(context).pop(false),
+          ),
+          TextButton(
+            child: const Text('Excluir'),
+            onPressed: () => Navigator.of(context).pop(true),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await FirebaseFirestore.instance
+          .collection('usuarios')
+          .doc(widget.user.uid)
+          .collection('glucoseRecords')
+          .doc(widget.recordId)
+          .delete();
       Navigator.of(context).pop();
     }
   }
@@ -447,6 +524,23 @@ class _EditRecordScreenState extends State<EditRecordScreen> {
                                       color: Colors.white,  ),
                 ),
               ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _confirmDeleteRecord,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  padding: const EdgeInsets.symmetric(vertical: 16.0),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                  ),
+                ),
+                child: const Text(
+                  'Excluir Registro',
+                  style: TextStyle(fontSize: 18, 
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -454,7 +548,6 @@ class _EditRecordScreenState extends State<EditRecordScreen> {
     );
   }
 }
-
 
 class AddRecordScreen extends StatefulWidget {
   final User user;
