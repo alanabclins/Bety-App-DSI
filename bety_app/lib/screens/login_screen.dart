@@ -1,16 +1,24 @@
-//import 'package:bety_sprint1/screens/cadastro_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:bety_sprint1/services/auth_service.dart';
-//import 'home_screen.dart';
 
-class LoginScreen extends StatelessWidget {
-  LoginScreen({super.key});
+class LoginScreen extends StatefulWidget {
+  @override
+  _LoginScreenState createState() => _LoginScreenState();
+}
 
+class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _senhaController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   final AuthService _authService = AuthService();
+  bool _senhaVisivel = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _senhaVisivel = false;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -64,14 +72,23 @@ class LoginScreen extends StatelessWidget {
                     const SizedBox(height: 35),
                     TextFormField(
                       keyboardType: TextInputType.visiblePassword,
-                      obscureText: true,
-                      obscuringCharacter: "*",
+                      obscureText: !_senhaVisivel,
                       controller: _senhaController,
                       decoration: InputDecoration(
                         labelText: "Sua senha aqui",
-                        suffixIconColor:
-                            const Color.fromARGB(255, 11, 171, 124),
-                        suffixIcon: const Icon(Icons.remove_red_eye),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _senhaVisivel
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                            color: const Color.fromARGB(255, 11, 171, 124),
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _senhaVisivel = !_senhaVisivel;
+                            });
+                          },
+                        ),
                         filled: true,
                         fillColor: const Color.fromARGB(255, 199, 244, 194),
                         border: OutlineInputBorder(
@@ -88,6 +105,7 @@ class LoginScreen extends StatelessWidget {
                         return null;
                       },
                     ),
+                    const SizedBox(height: 10),
                     const SizedBox(height: 35),
                     SizedBox(
                       width: double.infinity,
@@ -115,7 +133,7 @@ class LoginScreen extends StatelessWidget {
                             } else {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text('Erro: $result'),
+                                  content: Text('Usuário ou senha inválida'),
                                 ),
                               );
                             }
@@ -141,10 +159,23 @@ class LoginScreen extends StatelessWidget {
                         Navigator.pushNamed(context, '/cadastro');
                       },
                       child: const Text(
-                        "para se cadastrar clique aqui",
+                        "Para se cadastrar clique aqui",
                         style: TextStyle(
                           decoration: TextDecoration.underline,
                           color: Color.fromARGB(255, 11, 171, 124),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/recuperar_senha');
+                      },
+                      child: const Text(
+                        "Esqueceu a senha?",
+                        style: TextStyle(
+                          color: Color.fromARGB(255, 11, 171, 124),
+                          decoration: TextDecoration.underline,
                         ),
                       ),
                     ),

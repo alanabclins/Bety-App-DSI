@@ -83,7 +83,6 @@ class AuthService {
     required String nome,
     required String dataNascimento,
     required String tipoDiabetes,
-    required bool isPaciente,
   }) async {
     try {
       UserCredential userCredential = await _firebaseAuth
@@ -100,8 +99,6 @@ class AuthService {
         'email': email,
         'dataNascimento': dataNascimento,
         'tipoDiabetes': tipoDiabetes,
-        'isPaciente': isPaciente,
-        'isCuidador': !isPaciente,
       });
     } on FirebaseAuthException catch (e) {
       switch (e.code) {
@@ -184,10 +181,10 @@ class AuthService {
           .get();
 
       return querySnapshot.docs.map((doc) {
-      var data = doc.data() as Map<String, dynamic>;
-      data['refeicaoId'] = doc.id; // Adiciona o documentId
-      return data;
-    }).toList();
+        var data = doc.data() as Map<String, dynamic>;
+        data['refeicaoId'] = doc.id; // Adiciona o documentId
+        return data;
+      }).toList();
     } on FirebaseException catch (e) {
       print('Erro ao obter refeições: $e');
       return [];

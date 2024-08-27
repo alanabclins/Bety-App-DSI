@@ -4,6 +4,38 @@ import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+class Glicemia {
+  String id;
+  double concentracao;
+  Timestamp dataHora;
+  String tipoMedicao;
+
+  Glicemia({
+    required this.id,
+    required this.concentracao,
+    required this.dataHora,
+    required this.tipoMedicao,
+  });
+
+  factory Glicemia.fromFirestore(DocumentSnapshot doc) {
+    Map data = doc.data() as Map;
+    return Glicemia(
+      id: doc.id,
+      concentracao: data['concentracao'],
+      dataHora: data['dataHora'],
+      tipoMedicao: data['tipoMedicao'],
+    );
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'concentracao': concentracao,
+      'dataHora': dataHora,
+      'tipoMedicao': tipoMedicao,
+    };
+  }
+}
+
 class MedicaoGlicoseScreen extends StatefulWidget {
   const MedicaoGlicoseScreen({super.key, required this.user, required this.userData});
   final User user;
@@ -17,13 +49,33 @@ class _MedicaoGlicoseScreenState extends State<MedicaoGlicoseScreen> {
   final TextEditingController _searchController = TextEditingController();
   DateTime? _selectedDate;
 
-  void _deleteRecord(String id) async {
-    await FirebaseFirestore.instance
-        .collection('usuarios')
-        .doc(widget.user.uid)
-        .collection('glucoseRecords')
-        .doc(id)
-        .delete();
+  Future<void> _confirmDeleteRecord(String id) async {
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmar exclusão'),
+        content: const Text('Tem certeza de que deseja excluir este registro?'),
+        actions: [
+          TextButton(
+            child: const Text('Cancelar'),
+            onPressed: () => Navigator.of(context).pop(false),
+          ),
+          TextButton(
+            child: const Text('Excluir'),
+            onPressed: () => Navigator.of(context).pop(true),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await FirebaseFirestore.instance
+          .collection('usuarios')
+          .doc(widget.user.uid)
+          .collection('glucoseRecords')
+          .doc(id)
+          .delete();
+    }
   }
 
   void _clearSearch() {
@@ -98,7 +150,7 @@ class _MedicaoGlicoseScreenState extends State<MedicaoGlicoseScreen> {
                     .collection('usuarios')
                     .doc(widget.user.uid)
                     .collection('glucoseRecords')
-                    .orderBy('date', descending: true)
+                    .orderBy('dataHora', descending: true)
                     .snapshots(),
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) {
@@ -108,83 +160,93 @@ class _MedicaoGlicoseScreenState extends State<MedicaoGlicoseScreen> {
                   var records = snapshot.data!.docs;
 
                   if (_selectedDate != null) {
-                    final searchDate = DateFormat('dd/MM/yyyy').format(_selectedDate!);
                     records = records.where((record) {
-                      return record['date'] == searchDate;
+                      final recordDate = record['dataHora'].toDate();
+                      return recordDate.year == _selectedDate!.year &&
+                             recordDate.month == _selectedDate!.month &&
+                             recordDate.day == _selectedDate!.day;
                     }).toList();
+                  }
+
+                  if (records.isEmpty) {
+                    return Center(
+                      child: Text('Não há registros para o dia ${_searchController.text}'),
+                    );
                   }
 
                   return ListView.builder(
                     itemCount: records.length,
                     itemBuilder: (context, index) {
-                      final record = records[index];
-                      return Card(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10.0),
+                      final record = Glicemia.fromFirestore(records[index]);
+
+                      return Dismissible(
+                        key: Key(record.id),
+                        direction: DismissDirection.endToStart,
+                        onDismissed: (direction) {
+                          _confirmDeleteRecord(record.id);
+                        },
+                        background: Container(
+                          color: Colors.red,
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                          child: const Icon(Icons.delete, color: Colors.white),
                         ),
-                        margin: const EdgeInsets.all(8.0),
-                        color: Colors.lightGreen[100],
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16.0, vertical: 24.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(8.0),
-                                    decoration: BoxDecoration(
-                                      color: Colors.green[800],
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Text(
-                                      record['date'],
-                                      style: const TextStyle(color: Colors.white),
-                                    ),
+                        child: Card(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15.0),
+                          ),
+                          margin: const EdgeInsets.all(12.0),
+                          color: const Color(0xFF0BAB7C), // Aplicando a cor verde
+                          child: Padding(
+                            padding: const EdgeInsets.all(20.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Registro de ${DateFormat('dd/MM/yyyy').format(record.dataHora.toDate())} às ${DateFormat('HH:mm').format(record.dataHora.toDate())}',
+                                  style: const TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 16.0,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white, // Mudando a cor do texto para branco
                                   ),
-                                  Text(
-                                    'Medição realizada às ${record['time']}',
-                                    style: const TextStyle(
-                                      fontFamily: 'Poppins',
-                                      fontSize: 14.4,
-                                      fontWeight: FontWeight.w700,
-                                      height: 17.28 / 14.4,
-                                      textBaseline: TextBaseline.alphabetic,
-                                    ),
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Concentração de glicose: ${record.concentracao} mg/dL',
+                                  style: const TextStyle(
+                                    fontSize: 16.0,
+                                    color: Colors.white, // Mantendo a cor branca para legibilidade
                                   ),
-                                  Row(
-                                    children: [
-                                      IconButton(
-                                        icon: const Icon(Icons.edit),
-                                        onPressed: () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) => EditRecordScreen(
-                                                user: widget.user,
-                                                recordId: record.id,
-                                                recordData: record.data()
-                                                    as Map<String, dynamic>,
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                      IconButton(
-                                        icon: const Icon(Icons.close),
-                                        onPressed: () => _deleteRecord(record.id),
-                                      ),
-                                    ],
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Tipo de medição: ${record.tipoMedicao}',
+                                  style: const TextStyle(
+                                    fontSize: 16.0,
+                                    color: Colors.white,
                                   ),
-                                ],
-                              ),
-                              const SizedBox(height: 16),
-                              Text('Concentração de glicose: ${record['glucose']} mg/dL'),
-                              const SizedBox(height: 8),
-                              Text('Tipo de medição: ${record['measurementType']}'),
-                            ],
+                                ),
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: IconButton(
+                                    icon: const Icon(Icons.edit, color: Colors.white),
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => EditRecordScreen(
+                                            user: widget.user,
+                                            recordId: record.id,
+                                            recordData: record.toFirestore(),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       );
@@ -245,70 +307,110 @@ class EditRecordScreen extends StatefulWidget {
 
 class _EditRecordScreenState extends State<EditRecordScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _dateController = TextEditingController();
-  final _timeController = TextEditingController();
   final _glucoseController = TextEditingController();
   late String _selectedMeasurementType;
+  late DateTime _selectedDateTime;
 
   @override
   void initState() {
     super.initState();
-    _dateController.text = widget.recordData['date'];
-    _timeController.text = widget.recordData['time'];
-    _glucoseController.text = widget.recordData['glucose'].toString();
-    _selectedMeasurementType = widget.recordData['measurementType'];
+    _selectedDateTime = (widget.recordData['dataHora'] as Timestamp).toDate();
+    _glucoseController.text = widget.recordData['concentracao'].toString();
+    _selectedMeasurementType = widget.recordData['tipoMedicao'];
   }
 
   @override
   void dispose() {
-    _dateController.dispose();
-    _timeController.dispose();
     _glucoseController.dispose();
     super.dispose();
   }
 
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
+  Future<void> _selectDateTime(BuildContext context) async {
+    final DateTime? pickedDate = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: _selectedDateTime,
       firstDate: DateTime(2000),
       lastDate: DateTime(2101),
     );
-    if (picked != null) {
-      setState(() {
-        _dateController.text = DateFormat('dd/MM/yyyy').format(picked);
-      });
-    }
-  }
-
-  Future<void> _selectTime(BuildContext context) async {
-    final TimeOfDay? picked = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.now(),
-    );
-    if (picked != null) {
-      final now = DateTime.now();
-      final formattedTime = DateFormat('HH:mm').format(
-          DateTime(now.year, now.month, now.day, picked.hour, picked.minute));
-      setState(() {
-        _timeController.text = formattedTime;
-      });
+    if (pickedDate != null) {
+      final TimeOfDay? pickedTime = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(_selectedDateTime),
+      );
+      if (pickedTime != null) {
+        setState(() {
+          _selectedDateTime = DateTime(
+            pickedDate.year,
+            pickedDate.month,
+            pickedDate.day,
+            pickedTime.hour,
+            pickedTime.minute,
+          );
+        });
+      }
     }
   }
 
   Future<void> _submit() async {
-    if (_formKey.currentState!.validate()) {
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmar edição'),
+        content: const Text('Tem certeza de que deseja salvar as alterações?'),
+        actions: [
+          TextButton(
+            child: const Text('Cancelar'),
+            onPressed: () => Navigator.of(context).pop(false),
+          ),
+          TextButton(
+            child: const Text('Salvar'),
+            onPressed: () => Navigator.of(context).pop(true),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && _formKey.currentState!.validate()) {
       await FirebaseFirestore.instance
           .collection('usuarios')
           .doc(widget.user.uid)
           .collection('glucoseRecords')
           .doc(widget.recordId)
           .update({
-        'date': _dateController.text,
-        'time': _timeController.text,
-        'glucose': int.parse(_glucoseController.text),
-        'measurementType': _selectedMeasurementType,
+        'concentracao': double.parse(_glucoseController.text),
+        'dataHora': Timestamp.fromDate(_selectedDateTime),
+        'tipoMedicao': _selectedMeasurementType,
       });
+      Navigator.of(context).pop();
+    }
+  }
+
+  Future<void> _confirmDeleteRecord() async {
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmar exclusão'),
+        content: const Text('Tem certeza de que deseja excluir este registro?'),
+        actions: [
+          TextButton(
+            child: const Text('Cancelar'),
+            onPressed: () => Navigator.of(context).pop(false),
+          ),
+          TextButton(
+            child: const Text('Excluir'),
+            onPressed: () => Navigator.of(context).pop(true),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await FirebaseFirestore.instance
+          .collection('usuarios')
+          .doc(widget.user.uid)
+          .collection('glucoseRecords')
+          .doc(widget.recordId)
+          .delete();
       Navigator.of(context).pop();
     }
   }
@@ -331,9 +433,8 @@ class _EditRecordScreenState extends State<EditRecordScreen> {
           child: ListView(
             children: [
               TextFormField(
-                controller: _dateController,
                 decoration: InputDecoration(
-                  labelText: 'Data',
+                  labelText: 'Data e Hora',
                   labelStyle: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
                   filled: true,
                   fillColor: Colors.grey[200],
@@ -344,44 +445,14 @@ class _EditRecordScreenState extends State<EditRecordScreen> {
                   suffixIcon: IconButton(
                     icon: const Icon(Icons.calendar_today, color: Color(0xFF0BAB7C)),
                     onPressed: () {
-                      _selectDate(context);
+                      _selectDateTime(context);
                     },
                   ),
                 ),
                 readOnly: true,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Por favor, insira a data';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _timeController,
-                decoration: InputDecoration(
-                  labelText: 'Hora',
-                  labelStyle: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-                  filled: true,
-                  fillColor: Colors.grey[200],
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.0),
-                    borderSide: const BorderSide(color: Color(0xFF0BAB7C)),
-                  ),
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.access_time, color: Color(0xFF0BAB7C)),
-                    onPressed: () {
-                      _selectTime(context);
-                    },
-                  ),
+                controller: TextEditingController(
+                  text: DateFormat('dd/MM/yyyy HH:mm').format(_selectedDateTime),
                 ),
-                readOnly: true,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Por favor, insira a hora';
-                  }
-                  return null;
-                },
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -447,6 +518,23 @@ class _EditRecordScreenState extends State<EditRecordScreen> {
                                       color: Colors.white,  ),
                 ),
               ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _confirmDeleteRecord,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  padding: const EdgeInsets.symmetric(vertical: 16.0),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                  ),
+                ),
+                child: const Text(
+                  'Excluir Registro',
+                  style: TextStyle(fontSize: 18, 
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -454,7 +542,6 @@ class _EditRecordScreenState extends State<EditRecordScreen> {
     );
   }
 }
-
 
 class AddRecordScreen extends StatefulWidget {
   final User user;
@@ -467,45 +554,39 @@ class AddRecordScreen extends StatefulWidget {
 
 class _AddRecordScreenState extends State<AddRecordScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _dateController = TextEditingController();
-  final _timeController = TextEditingController();
   final _glucoseController = TextEditingController();
   String _selectedMeasurementType = 'Jejum';
+  DateTime _selectedDateTime = DateTime.now();
 
   @override
   void dispose() {
-    _dateController.dispose();
-    _timeController.dispose();
     _glucoseController.dispose();
     super.dispose();
   }
 
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
+  Future<void> _selectDateTime(BuildContext context) async {
+    final DateTime? pickedDate = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: _selectedDateTime,
       firstDate: DateTime(2000),
       lastDate: DateTime(2101),
     );
-    if (picked != null) {
-      setState(() {
-        _dateController.text = DateFormat('dd/MM/yyyy').format(picked);
-      });
-    }
-  }
-
-  Future<void> _selectTime(BuildContext context) async {
-    final TimeOfDay? picked = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.now(),
-    );
-    if (picked != null) {
-      final now = DateTime.now();
-      final formattedTime = DateFormat('HH:mm').format(
-          DateTime(now.year, now.month, now.day, picked.hour, picked.minute));
-      setState(() {
-        _timeController.text = formattedTime;
-      });
+    if (pickedDate != null) {
+      final TimeOfDay? pickedTime = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(_selectedDateTime),
+      );
+      if (pickedTime != null) {
+        setState(() {
+          _selectedDateTime = DateTime(
+            pickedDate.year,
+            pickedDate.month,
+            pickedDate.day,
+            pickedTime.hour,
+            pickedTime.minute,
+          );
+        });
+      }
     }
   }
 
@@ -516,10 +597,9 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
           .doc(widget.user.uid)
           .collection('glucoseRecords')
           .add({
-        'date': _dateController.text,
-        'time': _timeController.text,
-        'glucose': int.parse(_glucoseController.text),
-        'measurementType': _selectedMeasurementType,
+        'concentracao': double.parse(_glucoseController.text),
+        'dataHora': Timestamp.fromDate(_selectedDateTime),
+        'tipoMedicao': _selectedMeasurementType,
       });
       Navigator.of(context).pop();
     }
@@ -543,9 +623,8 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
           child: ListView(
             children: [
               TextFormField(
-                controller: _dateController,
                 decoration: InputDecoration(
-                  labelText: 'Data',
+                  labelText: 'Data e Hora',
                   labelStyle: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
                   filled: true,
                   fillColor: Colors.grey[200],
@@ -556,44 +635,14 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
                   suffixIcon: IconButton(
                     icon: const Icon(Icons.calendar_today, color: Color(0xFF0BAB7C)),
                     onPressed: () {
-                      _selectDate(context);
+                      _selectDateTime(context);
                     },
                   ),
                 ),
                 readOnly: true,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Por favor, insira a data';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _timeController,
-                decoration: InputDecoration(
-                  labelText: 'Hora',
-                  labelStyle: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-                  filled: true,
-                  fillColor: Colors.grey[200],
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.0),
-                    borderSide: const BorderSide(color: Color(0xFF0BAB7C)),
-                  ),
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.access_time, color: Color(0xFF0BAB7C)),
-                    onPressed: () {
-                      _selectTime(context);
-                    },
-                  ),
+                controller: TextEditingController(
+                  text: DateFormat('dd/MM/yyyy HH:mm').format(_selectedDateTime),
                 ),
-                readOnly: true,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Por favor, insira a hora';
-                  }
-                  return null;
-                },
               ),
               const SizedBox(height: 16),
               TextFormField(
