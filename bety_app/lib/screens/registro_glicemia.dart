@@ -4,6 +4,38 @@ import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+class Glicemia {
+  String id;
+  double concentracao;
+  Timestamp dataHora;
+  String tipoMedicao;
+
+  Glicemia({
+    required this.id,
+    required this.concentracao,
+    required this.dataHora,
+    required this.tipoMedicao,
+  });
+
+  factory Glicemia.fromFirestore(DocumentSnapshot doc) {
+    Map data = doc.data() as Map;
+    return Glicemia(
+      id: doc.id,
+      concentracao: data['concentracao'],
+      dataHora: data['dataHora'],
+      tipoMedicao: data['tipoMedicao'],
+    );
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'concentracao': concentracao,
+      'dataHora': dataHora,
+      'tipoMedicao': tipoMedicao,
+    };
+  }
+}
+
 class MedicaoGlicoseScreen extends StatefulWidget {
   const MedicaoGlicoseScreen({super.key, required this.user, required this.userData});
   final User user;
@@ -118,7 +150,7 @@ class _MedicaoGlicoseScreenState extends State<MedicaoGlicoseScreen> {
                     .collection('usuarios')
                     .doc(widget.user.uid)
                     .collection('glucoseRecords')
-                    .orderBy('date', descending: true)
+                    .orderBy('dataHora', descending: true)
                     .snapshots(),
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) {
@@ -128,9 +160,11 @@ class _MedicaoGlicoseScreenState extends State<MedicaoGlicoseScreen> {
                   var records = snapshot.data!.docs;
 
                   if (_selectedDate != null) {
-                    final searchDate = DateFormat('dd/MM/yyyy').format(_selectedDate!);
                     records = records.where((record) {
-                      return record['date'] == searchDate;
+                      final recordDate = record['dataHora'].toDate();
+                      return recordDate.year == _selectedDate!.year &&
+                             recordDate.month == _selectedDate!.month &&
+                             recordDate.day == _selectedDate!.day;
                     }).toList();
                   }
 
@@ -143,7 +177,8 @@ class _MedicaoGlicoseScreenState extends State<MedicaoGlicoseScreen> {
                   return ListView.builder(
                     itemCount: records.length,
                     itemBuilder: (context, index) {
-                      final record = records[index];
+                      final record = Glicemia.fromFirestore(records[index]);
+
                       return Dismissible(
                         key: Key(record.id),
                         direction: DismissDirection.endToStart,
@@ -168,7 +203,7 @@ class _MedicaoGlicoseScreenState extends State<MedicaoGlicoseScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Registro de ${record['date']} às ${record['time']}',
+                                  'Registro de ${DateFormat('dd/MM/yyyy').format(record.dataHora.toDate())} às ${DateFormat('HH:mm').format(record.dataHora.toDate())}',
                                   style: const TextStyle(
                                     fontFamily: 'Poppins',
                                     fontSize: 16.0,
@@ -178,7 +213,7 @@ class _MedicaoGlicoseScreenState extends State<MedicaoGlicoseScreen> {
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
-                                  'Concentração de glicose: ${record['glucose']} mg/dL',
+                                  'Concentração de glicose: ${record.concentracao} mg/dL',
                                   style: const TextStyle(
                                     fontSize: 16.0,
                                     color: Colors.white, // Mantendo a cor branca para legibilidade
@@ -186,7 +221,7 @@ class _MedicaoGlicoseScreenState extends State<MedicaoGlicoseScreen> {
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  'Tipo de medição: ${record['measurementType']}',
+                                  'Tipo de medição: ${record.tipoMedicao}',
                                   style: const TextStyle(
                                     fontSize: 16.0,
                                     color: Colors.white,
@@ -203,8 +238,7 @@ class _MedicaoGlicoseScreenState extends State<MedicaoGlicoseScreen> {
                                           builder: (context) => EditRecordScreen(
                                             user: widget.user,
                                             recordId: record.id,
-                                            recordData: record.data()
-                                                as Map<String, dynamic>,
+                                            recordData: record.toFirestore(),
                                           ),
                                         ),
                                       );
@@ -255,7 +289,6 @@ class _MedicaoGlicoseScreenState extends State<MedicaoGlicoseScreen> {
   }
 }
 
-
 class EditRecordScreen extends StatefulWidget {
   final User user;
   final String recordId;
@@ -274,54 +307,47 @@ class EditRecordScreen extends StatefulWidget {
 
 class _EditRecordScreenState extends State<EditRecordScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _dateController = TextEditingController();
-  final _timeController = TextEditingController();
   final _glucoseController = TextEditingController();
   late String _selectedMeasurementType;
+  late DateTime _selectedDateTime;
 
   @override
   void initState() {
     super.initState();
-    _dateController.text = widget.recordData['date'];
-    _timeController.text = widget.recordData['time'];
-    _glucoseController.text = widget.recordData['glucose'].toString();
-    _selectedMeasurementType = widget.recordData['measurementType'];
+    _selectedDateTime = (widget.recordData['dataHora'] as Timestamp).toDate();
+    _glucoseController.text = widget.recordData['concentracao'].toString();
+    _selectedMeasurementType = widget.recordData['tipoMedicao'];
   }
 
   @override
   void dispose() {
-    _dateController.dispose();
-    _timeController.dispose();
     _glucoseController.dispose();
     super.dispose();
   }
 
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
+  Future<void> _selectDateTime(BuildContext context) async {
+    final DateTime? pickedDate = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: _selectedDateTime,
       firstDate: DateTime(2000),
       lastDate: DateTime(2101),
     );
-    if (picked != null) {
-      setState(() {
-        _dateController.text = DateFormat('dd/MM/yyyy').format(picked);
-      });
-    }
-  }
-
-  Future<void> _selectTime(BuildContext context) async {
-    final TimeOfDay? picked = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.now(),
-    );
-    if (picked != null) {
-      final now = DateTime.now();
-      final formattedTime = DateFormat('HH:mm').format(
-          DateTime(now.year, now.month, now.day, picked.hour, picked.minute));
-      setState(() {
-        _timeController.text = formattedTime;
-      });
+    if (pickedDate != null) {
+      final TimeOfDay? pickedTime = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(_selectedDateTime),
+      );
+      if (pickedTime != null) {
+        setState(() {
+          _selectedDateTime = DateTime(
+            pickedDate.year,
+            pickedDate.month,
+            pickedDate.day,
+            pickedTime.hour,
+            pickedTime.minute,
+          );
+        });
+      }
     }
   }
 
@@ -351,10 +377,9 @@ class _EditRecordScreenState extends State<EditRecordScreen> {
           .collection('glucoseRecords')
           .doc(widget.recordId)
           .update({
-        'date': _dateController.text,
-        'time': _timeController.text,
-        'glucose': int.parse(_glucoseController.text),
-        'measurementType': _selectedMeasurementType,
+        'concentracao': double.parse(_glucoseController.text),
+        'dataHora': Timestamp.fromDate(_selectedDateTime),
+        'tipoMedicao': _selectedMeasurementType,
       });
       Navigator.of(context).pop();
     }
@@ -408,9 +433,8 @@ class _EditRecordScreenState extends State<EditRecordScreen> {
           child: ListView(
             children: [
               TextFormField(
-                controller: _dateController,
                 decoration: InputDecoration(
-                  labelText: 'Data',
+                  labelText: 'Data e Hora',
                   labelStyle: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
                   filled: true,
                   fillColor: Colors.grey[200],
@@ -421,44 +445,14 @@ class _EditRecordScreenState extends State<EditRecordScreen> {
                   suffixIcon: IconButton(
                     icon: const Icon(Icons.calendar_today, color: Color(0xFF0BAB7C)),
                     onPressed: () {
-                      _selectDate(context);
+                      _selectDateTime(context);
                     },
                   ),
                 ),
                 readOnly: true,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Por favor, insira a data';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _timeController,
-                decoration: InputDecoration(
-                  labelText: 'Hora',
-                  labelStyle: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-                  filled: true,
-                  fillColor: Colors.grey[200],
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.0),
-                    borderSide: const BorderSide(color: Color(0xFF0BAB7C)),
-                  ),
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.access_time, color: Color(0xFF0BAB7C)),
-                    onPressed: () {
-                      _selectTime(context);
-                    },
-                  ),
+                controller: TextEditingController(
+                  text: DateFormat('dd/MM/yyyy HH:mm').format(_selectedDateTime),
                 ),
-                readOnly: true,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Por favor, insira a hora';
-                  }
-                  return null;
-                },
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -560,45 +554,39 @@ class AddRecordScreen extends StatefulWidget {
 
 class _AddRecordScreenState extends State<AddRecordScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _dateController = TextEditingController();
-  final _timeController = TextEditingController();
   final _glucoseController = TextEditingController();
   String _selectedMeasurementType = 'Jejum';
+  DateTime _selectedDateTime = DateTime.now();
 
   @override
   void dispose() {
-    _dateController.dispose();
-    _timeController.dispose();
     _glucoseController.dispose();
     super.dispose();
   }
 
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
+  Future<void> _selectDateTime(BuildContext context) async {
+    final DateTime? pickedDate = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: _selectedDateTime,
       firstDate: DateTime(2000),
       lastDate: DateTime(2101),
     );
-    if (picked != null) {
-      setState(() {
-        _dateController.text = DateFormat('dd/MM/yyyy').format(picked);
-      });
-    }
-  }
-
-  Future<void> _selectTime(BuildContext context) async {
-    final TimeOfDay? picked = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.now(),
-    );
-    if (picked != null) {
-      final now = DateTime.now();
-      final formattedTime = DateFormat('HH:mm').format(
-          DateTime(now.year, now.month, now.day, picked.hour, picked.minute));
-      setState(() {
-        _timeController.text = formattedTime;
-      });
+    if (pickedDate != null) {
+      final TimeOfDay? pickedTime = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(_selectedDateTime),
+      );
+      if (pickedTime != null) {
+        setState(() {
+          _selectedDateTime = DateTime(
+            pickedDate.year,
+            pickedDate.month,
+            pickedDate.day,
+            pickedTime.hour,
+            pickedTime.minute,
+          );
+        });
+      }
     }
   }
 
@@ -609,10 +597,9 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
           .doc(widget.user.uid)
           .collection('glucoseRecords')
           .add({
-        'date': _dateController.text,
-        'time': _timeController.text,
-        'glucose': int.parse(_glucoseController.text),
-        'measurementType': _selectedMeasurementType,
+        'concentracao': double.parse(_glucoseController.text),
+        'dataHora': Timestamp.fromDate(_selectedDateTime),
+        'tipoMedicao': _selectedMeasurementType,
       });
       Navigator.of(context).pop();
     }
@@ -636,9 +623,8 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
           child: ListView(
             children: [
               TextFormField(
-                controller: _dateController,
                 decoration: InputDecoration(
-                  labelText: 'Data',
+                  labelText: 'Data e Hora',
                   labelStyle: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
                   filled: true,
                   fillColor: Colors.grey[200],
@@ -649,44 +635,14 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
                   suffixIcon: IconButton(
                     icon: const Icon(Icons.calendar_today, color: Color(0xFF0BAB7C)),
                     onPressed: () {
-                      _selectDate(context);
+                      _selectDateTime(context);
                     },
                   ),
                 ),
                 readOnly: true,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Por favor, insira a data';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _timeController,
-                decoration: InputDecoration(
-                  labelText: 'Hora',
-                  labelStyle: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-                  filled: true,
-                  fillColor: Colors.grey[200],
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.0),
-                    borderSide: const BorderSide(color: Color(0xFF0BAB7C)),
-                  ),
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.access_time, color: Color(0xFF0BAB7C)),
-                    onPressed: () {
-                      _selectTime(context);
-                    },
-                  ),
+                controller: TextEditingController(
+                  text: DateFormat('dd/MM/yyyy HH:mm').format(_selectedDateTime),
                 ),
-                readOnly: true,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Por favor, insira a hora';
-                  }
-                  return null;
-                },
               ),
               const SizedBox(height: 16),
               TextFormField(
