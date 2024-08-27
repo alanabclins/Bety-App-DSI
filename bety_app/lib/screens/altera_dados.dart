@@ -127,20 +127,6 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
     });
   }
 
-  void _handleExcluirRefeicao(String refeicaoId) async {
-    final String? error = await _authService.excluirRefeicao(
-      userId: widget.user.uid,
-      refeicaoId: refeicaoId,
-    );
-    if (error != null) {
-      print('Erro ao excluir refeição: $error');
-    } else {
-      setState(() {
-        _refeicoesFuture = _authService.obterRefeicoes(widget.user.uid);
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -239,7 +225,6 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
           ...refeicoes.map((refeicao) {
             final hora = (refeicao['hora'] as Timestamp).toDate();
             final horaFormatada = DateFormat('HH:mm').format(hora);
-            final refeicaoId = refeicao['refeicaoId'];
 
             return Builder(
               builder: (BuildContext context) {
@@ -268,7 +253,7 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
                           ),
                         ),
                         Positioned(
-                          left: 10,
+                          right: 10,
                           top: 10,
                           child: IconButton(
                             icon: Icon(Icons.edit, color: Colors.white),
@@ -286,23 +271,6 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
                                   _refeicoesFuture = _authService.obterRefeicoes(widget.user.uid);
                                 });
                               });
-                            },
-                          ),
-                        ),
-                        Positioned(
-                          right: 10,
-                          top: 10,
-                          child: IconButton(
-                            icon: Icon(Icons.delete, color: Colors.white),
-                            onPressed: () {
-                              CustomAlertDialog.show(
-                                context: context,
-                                title: 'Excluir refeição',
-                                content: 'Você tem certeza que deseja excluir esta refeição?',
-                                onConfirm: () {
-                                  _handleExcluirRefeicao(refeicaoId);
-                                },
-                              );
                             },
                           ),
                         ),
