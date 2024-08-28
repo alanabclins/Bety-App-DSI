@@ -148,9 +148,9 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
                 filled: true,
                 fillColor: const Color.fromARGB(255, 199, 244, 194),
                 border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                    ),
+                  borderRadius: BorderRadius.circular(10),
                 ),
+              ),
             ),
             const SizedBox(height: 20),
             TextField(
@@ -160,19 +160,19 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
                 filled: true,
                 fillColor: const Color.fromARGB(255, 199, 244, 194),
                 border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                  )
+                  borderRadius: BorderRadius.circular(10),
                 ),
+              ),
             ),
             const SizedBox(height: 20),
             TextFormField(
               controller: _dataNascimentoController,
               decoration: InputDecoration(
-              labelText: 'Data de nascimento',
-              filled: true,
-              fillColor: const Color.fromARGB(255, 199, 244, 194),
-              border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
+                labelText: 'Data de nascimento',
+                filled: true,
+                fillColor: const Color.fromARGB(255, 199, 244, 194),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 suffixIcon: IconButton(
                   icon: Icon(Icons.calendar_today),
@@ -197,131 +197,130 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
                 filled: true,
                 fillColor: const Color.fromARGB(255, 199, 244, 194),
                 border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                  )
+                  borderRadius: BorderRadius.circular(10),
                 ),
+              ),
             ),
             SizedBox(height: 20.0),
             Expanded(
-  child: FutureBuilder<List<Map<String, dynamic>>>(
-    future: _refeicoesFuture,
-    builder: (context, snapshot) {
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        return Center(child: CircularProgressIndicator());
-      } else if (snapshot.hasError) {
-        return Center(child: Text('Erro ao carregar refeições'));
-      }
+              child: FutureBuilder<List<Map<String, dynamic>>>(
+                future: _refeicoesFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Center(child: CircularProgressIndicator());
+                  } else if (snapshot.hasError) {
+                    return Center(child: Text('Erro ao carregar refeições'));
+                  }
 
-      final refeicoes = snapshot.data ?? [];
-      return CarouselSlider(
-        options: CarouselOptions(
-          height: 200.0,
-          autoPlay: true,
-          enlargeCenterPage: true,
-          aspectRatio: 16/9,
-          viewportFraction: 0.8,
-        ),
-        items: [
-          ...refeicoes.map((refeicao) {
-            final hora = (refeicao['hora'] as Timestamp).toDate();
-            final horaFormatada = DateFormat('HH:mm').format(hora);
+                  final refeicoes = snapshot.data ?? [];
+                  return CarouselSlider(
+                    options: CarouselOptions(
+                      height: 200.0,
+                      autoPlay: true,
+                      enlargeCenterPage: true,
+                      aspectRatio: 16 / 9,
+                      viewportFraction: 0.8,
+                    ),
+                    items: [
+                      ...refeicoes.map((refeicao) {
+                        final hora = (refeicao['hora'] as Timestamp).toDate();
+                        final horaFormatada = DateFormat('HH:mm').format(hora);
 
-            return Builder(
-              builder: (BuildContext context) {
-                return Container(
-                  width: 200.0,
-                  child: Card(
-                    color: Color(0xFF0BAB7C),
-                    child: Stack(
-                      children: [
-                        Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SizedBox(height: 18.0),
-                              Text(
-                                refeicao['descricao'] ?? 'Sem descrição',
-                                style: TextStyle(fontSize: 20.0, color: Colors.white),
-                                textAlign: TextAlign.center,
-                              ),
-                              SizedBox(height: 10.0),
-                              Text(
-                                horaFormatada,
-                                style: TextStyle(fontSize: 18.0, color: Colors.white),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Positioned(
-                          right: 10,
-                          top: 10,
-                          child: IconButton(
-                            icon: Icon(Icons.edit, color: Colors.white),
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => AdicionarRefeicaoScreen(
-                                    userId: widget.user.uid,
-                                    refeicao: refeicao,
-                                  ),
+                        return Builder(
+                          builder: (BuildContext context) {
+                            return Container(
+                              width: 200.0,
+                              child: Card(
+                                color: Color(0xFF0BAB7C),
+                                child: Stack(
+                                  children: [
+                                    Center(
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          SizedBox(height: 18.0),
+                                          Text(
+                                            refeicao['descricao'] ?? 'Sem descrição',
+                                            style: TextStyle(fontSize: 20.0, color: Colors.white),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                          SizedBox(height: 10.0),
+                                          Text(
+                                            horaFormatada,
+                                            style: TextStyle(fontSize: 18.0, color: Colors.white),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Positioned(
+                                      right: 10,
+                                      top: 10,
+                                      child: IconButton(
+                                        icon: Icon(Icons.edit, color: Colors.white),
+                                        onPressed: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => AdicionarRefeicaoScreen(
+                                                userId: widget.user.uid,
+                                                refeicao: refeicao,
+                                              ),
+                                            ),
+                                          ).then((_) {
+                                            setState(() {
+                                              _refeicoesFuture = _authService.obterRefeicoes(widget.user.uid);
+                                            });
+                                          });
+                                        },
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ).then((_) {
-                                setState(() {
-                                  _refeicoesFuture = _authService.obterRefeicoes(widget.user.uid);
-                                });
-                              });
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            );
-          }).toList(),
-          Builder(
-            builder: (BuildContext context) {
-              return Container(
-                width: 300.0,
-                child: Card(
-                  color: Color(0xFF0BAB7C),
-                  child: InkWell(
-                    onTap: _addNewRefeicao,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.add, size: 50.0, color: Colors.white),
-                        SizedBox(height: 10.0),
-                        Text(
-                          'Adicionar nova refeição',
-                          style: TextStyle(fontSize: 18.0, color: Colors.white),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ],
-      );
-    },
-  ),
-),
-
-
+                              ),
+                            );
+                          },
+                        );
+                      }).toList(),
+                      Builder(
+                        builder: (BuildContext context) {
+                          return Container(
+                            width: 300.0,
+                            child: Card(
+                              color: Color(0xFF0BAB7C),
+                              child: InkWell(
+                                onTap: _addNewRefeicao,
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.add, size: 50.0, color: Colors.white),
+                                    SizedBox(height: 10.0),
+                                    Text(
+                                      'Adicionar nova refeição',
+                                      style: TextStyle(fontSize: 18.0, color: Colors.white),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
             const SizedBox(height: 30),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton(
+            FractionallySizedBox(
+              widthFactor: 0.9, // 90% da largura disponível
+              child: SizedBox(
+                height: 50, // Altura constante
+                child: ElevatedButton(
                   onPressed: () {
                     CustomAlertDialog.show(
-                      context: context, 
-                      title: 'Salvar alterações', 
-                      content: 'Você tem certeza que deseja salver as alterações?', 
+                      context: context,
+                      title: 'Salvar alterações',
+                      content: 'Você tem certeza que deseja salvar as alterações?',
                       onConfirm: () {
                         _handleButtonPress();
                       },
@@ -331,13 +330,19 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Color(0xFF0BAB7C),
                     foregroundColor: Color(0xFFFBFAF3),
-                    padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                 ),
-                ElevatedButton(
+              ),
+            ),
+            SizedBox(height: 10), // Espaço entre os botões
+            FractionallySizedBox(
+              widthFactor: 0.9, // 90% da largura disponível
+              child: SizedBox(
+                height: 50, // Altura constante
+                child: ElevatedButton(
                   onPressed: () {
                     Navigator.pop(context);
                   },
@@ -345,13 +350,12 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red,
                     foregroundColor: Color(0xFFFBFAF3),
-                    padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                 ),
-              ],
+              ),
             ),
           ],
         ),

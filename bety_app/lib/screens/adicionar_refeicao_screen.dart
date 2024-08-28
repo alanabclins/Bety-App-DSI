@@ -90,7 +90,6 @@ class _AdicionarRefeicaoScreenState extends State<AdicionarRefeicaoScreen> {
       );
     }
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -131,10 +130,11 @@ class _AdicionarRefeicaoScreenState extends State<AdicionarRefeicaoScreen> {
               ),
             ),
             SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton(
+            FractionallySizedBox(
+              widthFactor: 0.9, // 90% da largura disponível
+              child: SizedBox(
+                height: 50, // Altura constante
+                child: ElevatedButton(
                   onPressed: () {
                     CustomAlertDialog.show(
                       context: context,
@@ -149,14 +149,21 @@ class _AdicionarRefeicaoScreenState extends State<AdicionarRefeicaoScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Color(0xFF0BAB7C),
                     foregroundColor: Color(0xFFFBFAF3),
-                    padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                 ),
-                if (_refeicaoId != null)
-                  ElevatedButton(
+              ),
+            ),
+            if (_refeicaoId != null)
+              SizedBox(height: 10),
+            if (_refeicaoId != null)
+              FractionallySizedBox(
+                widthFactor: 0.9, // 90% da largura disponível
+                child: SizedBox(
+                  height: 50, // Altura constante
+                  child: ElevatedButton(
                     onPressed: () {
                       // Lógica para exclusão de refeição
                       CustomAlertDialog.show(
@@ -176,14 +183,13 @@ class _AdicionarRefeicaoScreenState extends State<AdicionarRefeicaoScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,
                       foregroundColor: Color(0xFFFBFAF3),
-                      padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
                   ),
-              ],
-            ),
+                ),
+              ),
           ],
         ),
       ),
