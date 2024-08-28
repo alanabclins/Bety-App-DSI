@@ -1,3 +1,4 @@
+import 'package:bety_sprint1/services/auth_service.dart';
 import 'package:bety_sprint1/utils/custom_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -51,31 +52,29 @@ class _MedicaoGlicoseScreenState extends State<MedicaoGlicoseScreen> {
 
   Future<void> _confirmDeleteRecord(String id) async {
     final bool? confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Confirmar exclusão'),
-        content: const Text('Tem certeza de que deseja excluir este registro?'),
-        actions: [
-          TextButton(
-            child: const Text('Cancelar'),
-            onPressed: () => Navigator.of(context).pop(false),
-          ),
-          TextButton(
-            child: const Text('Excluir'),
-            onPressed: () => Navigator.of(context).pop(true),
-          ),
-        ],
-      ),
-    );
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Confirmar exclusão'),
+      content: const Text('Tem certeza de que deseja excluir este registro?'),
+      actions: [
+        TextButton(
+          child: const Text('Cancelar'),
+          onPressed: () => Navigator.of(context).pop(false),
+        ),
+        TextButton(
+          child: const Text('Excluir'),
+          onPressed: () => Navigator.of(context).pop(true),
+        ),
+      ],
+    ),
+  );
 
-    if (confirmed == true) {
-      await FirebaseFirestore.instance
-          .collection('usuarios')
-          .doc(widget.user.uid)
-          .collection('glucoseRecords')
-          .doc(id)
-          .delete();
-    }
+  if (confirmed == true) {
+    await AuthService().excluirRegistroGlicemia(
+      userId: widget.user.uid,
+      recordId: id,
+    );
+  }
   }
 
   void _clearSearch() {
@@ -352,38 +351,36 @@ class _EditRecordScreenState extends State<EditRecordScreen> {
   }
 
   Future<void> _submit() async {
-    final bool? confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Confirmar edição'),
-        content: const Text('Tem certeza de que deseja salvar as alterações?'),
-        actions: [
-          TextButton(
-            child: const Text('Cancelar'),
-            onPressed: () => Navigator.of(context).pop(false),
-          ),
-          TextButton(
-            child: const Text('Salvar'),
-            onPressed: () => Navigator.of(context).pop(true),
-          ),
-        ],
-      ),
-    );
+  final bool? confirmed = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Confirmar edição'),
+      content: const Text('Tem certeza de que deseja salvar as alterações?'),
+      actions: [
+        TextButton(
+          child: const Text('Cancelar'),
+          onPressed: () => Navigator.of(context).pop(false),
+        ),
+        TextButton(
+          child: const Text('Salvar'),
+          onPressed: () => Navigator.of(context).pop(true),
+        ),
+      ],
+    ),
+  );
 
-    if (confirmed == true && _formKey.currentState!.validate()) {
-      await FirebaseFirestore.instance
-          .collection('usuarios')
-          .doc(widget.user.uid)
-          .collection('glucoseRecords')
-          .doc(widget.recordId)
-          .update({
-        'concentracao': double.parse(_glucoseController.text),
-        'dataHora': Timestamp.fromDate(_selectedDateTime),
-        'tipoMedicao': _selectedMeasurementType,
-      });
-      Navigator.of(context).pop();
-    }
+  if (confirmed == true && _formKey.currentState!.validate()) {
+    await AuthService().atualizarRegistroGlicemia(
+      userId: widget.user.uid,
+      recordId: widget.recordId,
+      concentracao: double.parse(_glucoseController.text),
+      dataHora: _selectedDateTime,
+      tipoMedicao: _selectedMeasurementType,
+    );
+    Navigator.of(context).pop();
   }
+}
+
 
   Future<void> _confirmDeleteRecord() async {
     final bool? confirmed = await showDialog<bool>(
@@ -591,19 +588,17 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
   }
 
   Future<void> _submit() async {
-    if (_formKey.currentState!.validate()) {
-      await FirebaseFirestore.instance
-          .collection('usuarios')
-          .doc(widget.user.uid)
-          .collection('glucoseRecords')
-          .add({
-        'concentracao': double.parse(_glucoseController.text),
-        'dataHora': Timestamp.fromDate(_selectedDateTime),
-        'tipoMedicao': _selectedMeasurementType,
-      });
-      Navigator.of(context).pop();
-    }
+  if (_formKey.currentState!.validate()) {
+    await AuthService().adicionarRegistroGlicemia(
+      userId: widget.user.uid,
+      concentracao: double.parse(_glucoseController.text),
+      dataHora: _selectedDateTime,
+      tipoMedicao: _selectedMeasurementType,
+    );
+    Navigator.of(context).pop();
   }
+}
+
 
   @override
   Widget build(BuildContext context) {

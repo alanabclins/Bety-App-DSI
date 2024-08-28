@@ -233,6 +233,71 @@ class AuthService {
     }
     return null;
   }
+   // Adicionar registro de glicemia
+  Future<String?> adicionarRegistroGlicemia({
+    required String userId,
+    required double concentracao,
+    required DateTime dataHora,
+    required String tipoMedicao,
+  }) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('usuarios')
+          .doc(userId)
+          .collection('glucoseRecords')
+          .add({
+        'concentracao': concentracao,
+        'dataHora': Timestamp.fromDate(dataHora),
+        'tipoMedicao': tipoMedicao,
+      });
+      return null;
+    } catch (e) {
+      return 'Erro ao adicionar registro de glicemia: $e';
+    }
+  }
+
+  // Atualizar registro de glicemia
+  Future<String?> atualizarRegistroGlicemia({
+    required String userId,
+    required String recordId,
+    required double concentracao,
+    required DateTime dataHora,
+    required String tipoMedicao,
+  }) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('usuarios')
+          .doc(userId)
+          .collection('glucoseRecords')
+          .doc(recordId)
+          .update({
+        'concentracao': concentracao,
+        'dataHora': Timestamp.fromDate(dataHora),
+        'tipoMedicao': tipoMedicao,
+      });
+      return null;
+    } catch (e) {
+      return 'Erro ao atualizar registro de glicemia: $e';
+    }
+  }
+
+  // Excluir registro de glicemia
+  Future<String?> excluirRegistroGlicemia({
+    required String userId,
+    required String recordId,
+  }) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('usuarios')
+          .doc(userId)
+          .collection('glucoseRecords')
+          .doc(recordId)
+          .delete();
+      return null;
+    } catch (e) {
+      return 'Erro ao excluir registro de glicemia: $e';
+    }
+  }
 }
 
 class StorageService {
