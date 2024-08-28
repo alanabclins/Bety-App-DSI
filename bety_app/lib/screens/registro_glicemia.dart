@@ -142,119 +142,123 @@ class _MedicaoGlicoseScreenState extends State<MedicaoGlicoseScreen> {
             ),
           ),
           Expanded(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: 600),
-              child: StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance
-                    .collection('usuarios')
-                    .doc(widget.user.uid)
-                    .collection('glucoseRecords')
-                    .orderBy('dataHora', descending: true)
-                    .snapshots(),
-                builder: (context, snapshot) {
-                  if (!snapshot.hasData) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
+  child: ConstrainedBox(
+    constraints: BoxConstraints(maxWidth: 600),
+    child: StreamBuilder<QuerySnapshot>(
+      stream: AuthService().obterRegistrosGlicemia(widget.user.uid),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-                  var records = snapshot.data!.docs;
+        var records = snapshot.data!.docs;
 
-                  if (_selectedDate != null) {
-                    records = records.where((record) {
-                      final recordDate = record['dataHora'].toDate();
-                      return recordDate.year == _selectedDate!.year &&
-                             recordDate.month == _selectedDate!.month &&
-                             recordDate.day == _selectedDate!.day;
-                    }).toList();
-                  }
+        // Verificação se não há registros no total
+        if (records.isEmpty) {
+          return Center(
+            child: Text('Nenhum registro efetuado.'),
+          );
+        }
 
-                  if (records.isEmpty) {
-                    return Center(
-                      child: Text('Não há registros para o dia ${_searchController.text}'),
-                    );
-                  }
+        // Filtra os registros se uma data foi selecionada
+        if (_selectedDate != null) {
+          records = records.where((record) {
+            final recordDate = record['dataHora'].toDate();
+            return recordDate.year == _selectedDate!.year &&
+                   recordDate.month == _selectedDate!.month &&
+                   recordDate.day == _selectedDate!.day;
+          }).toList();
+        }
 
-                  return ListView.builder(
-                    itemCount: records.length,
-                    itemBuilder: (context, index) {
-                      final record = Glicemia.fromFirestore(records[index]);
+        // Exibe mensagem se não houver registros para o dia selecionado
+        if (records.isEmpty) {
+          return Center(
+            child: Text('Não há registros para o dia ${_searchController.text}'),
+          );
+        }
 
-                      return Dismissible(
-                        key: Key(record.id),
-                        direction: DismissDirection.endToStart,
-                        onDismissed: (direction) {
-                          _confirmDeleteRecord(record.id);
-                        },
-                        background: Container(
-                          color: Colors.red,
-                          alignment: Alignment.centerRight,
-                          padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                          child: const Icon(Icons.delete, color: Colors.white),
-                        ),
-                        child: Card(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15.0),
-                          ),
-                          margin: const EdgeInsets.all(12.0),
-                          color: const Color(0xFF0BAB7C), // Aplicando a cor verde
-                          child: Padding(
-                            padding: const EdgeInsets.all(20.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Registro de ${DateFormat('dd/MM/yyyy').format(record.dataHora.toDate())} às ${DateFormat('HH:mm').format(record.dataHora.toDate())}',
-                                  style: const TextStyle(
-                                    fontFamily: 'Poppins',
-                                    fontSize: 16.0,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white, // Mudando a cor do texto para branco
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  'Concentração de glicose: ${record.concentracao} mg/dL',
-                                  style: const TextStyle(
-                                    fontSize: 16.0,
-                                    color: Colors.white, // Mantendo a cor branca para legibilidade
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Tipo de medição: ${record.tipoMedicao}',
-                                  style: const TextStyle(
-                                    fontSize: 16.0,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                Align(
-                                  alignment: Alignment.centerRight,
-                                  child: IconButton(
-                                    icon: const Icon(Icons.edit, color: Colors.white),
-                                    onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => EditRecordScreen(
-                                            user: widget.user,
-                                            recordId: record.id,
-                                            recordData: record.toFirestore(),
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  );
-                },
+        return ListView.builder(
+          itemCount: records.length,
+          itemBuilder: (context, index) {
+            final record = Glicemia.fromFirestore(records[index]);
+
+            return Dismissible(
+              key: Key(record.id),
+              direction: DismissDirection.endToStart,
+              onDismissed: (direction) {
+                _confirmDeleteRecord(record.id);
+              },
+              background: Container(
+                color: Colors.red,
+                alignment: Alignment.centerRight,
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: const Icon(Icons.delete, color: Colors.white),
               ),
-            ),
-          ),
+              child: Card(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15.0),
+                ),
+                margin: const EdgeInsets.all(12.0),
+                color: const Color(0xFF0BAB7C),
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Registro de ${DateFormat('dd/MM/yyyy').format(record.dataHora.toDate())} às ${DateFormat('HH:mm').format(record.dataHora.toDate())}',
+                        style: const TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 16.0,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Concentração de glicose: ${record.concentracao} mg/dL',
+                        style: const TextStyle(
+                          fontSize: 16.0,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Tipo de medição: ${record.tipoMedicao}',
+                        style: const TextStyle(
+                          fontSize: 16.0,
+                          color: Colors.white,
+                        ),
+                      ),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: IconButton(
+                          icon: const Icon(Icons.edit, color: Colors.white),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => EditRecordScreen(
+                                  user: widget.user,
+                                  recordId: record.id,
+                                  recordData: record.toFirestore(),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    ),
+  ),
+),
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: ElevatedButton.icon(

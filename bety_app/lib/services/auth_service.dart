@@ -298,6 +298,14 @@ class AuthService {
       return 'Erro ao excluir registro de glicemia: $e';
     }
   }
+  Stream<QuerySnapshot> obterRegistrosGlicemia(String userId) {
+    return FirebaseFirestore.instance
+        .collection('usuarios')
+        .doc(userId)
+        .collection('glucoseRecords')
+        .orderBy('dataHora', descending: true)
+        .snapshots();
+  }
 }
 
 class StorageService {
