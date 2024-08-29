@@ -147,7 +147,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   context,
                   icon: Icons.health_and_safety,
                   title: 'Registro de Glicemia',
-                  subtitle: lastGlucose,
+                  subtitle: '120 mg/dL',
                   onTap: () => Navigator.pushNamed(context, '/glicemia'),
                 ),
                 const SizedBox(height: 20),
