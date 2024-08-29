@@ -90,7 +90,6 @@ class _AdicionarRefeicaoScreenState extends State<AdicionarRefeicaoScreen> {
       );
     }
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -106,7 +105,14 @@ class _AdicionarRefeicaoScreenState extends State<AdicionarRefeicaoScreen> {
           children: [
             TextField(
               controller: _descricaoController,
-              decoration: InputDecoration(labelText: 'Descrição'),
+              decoration: InputDecoration(
+                labelText: 'Descrição',
+                filled: true,
+                fillColor: const Color.fromARGB(255, 199, 244, 194),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
             ),
             SizedBox(height: 10),
             Text(
@@ -117,20 +123,73 @@ class _AdicionarRefeicaoScreenState extends State<AdicionarRefeicaoScreen> {
             TextButton(
               onPressed: () => _selectTime(context),
               child: Text('Escolher Hora'),
+              style: TextButton.styleFrom(
+                backgroundColor: Color(0xFF0BAB7C),
+                foregroundColor: Color(0xFFFBFAF3),
+                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              ),
             ),
             SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: (){ CustomAlertDialog.show(
-                                context: context,
-                                title: 'Salvar refeição',
-                                content: 'Você tem certeza que deseja salvar esta refeição?',
-                                onConfirm: () {
-                                  _saveRefeicao();
-                                },
-                              ); 
-                            },
-              child: Text(_refeicaoId == null ? 'Adicionar' : 'Salvar Alterações'),
+            FractionallySizedBox(
+              widthFactor: 0.9, // 90% da largura disponível
+              child: SizedBox(
+                height: 50, // Altura constante
+                child: ElevatedButton(
+                  onPressed: () {
+                    CustomAlertDialog.show(
+                      context: context,
+                      title: 'Salvar refeição',
+                      content: 'Você tem certeza que deseja salvar esta refeição?',
+                      onConfirm: () {
+                        _saveRefeicao();
+                      },
+                    );
+                  },
+                  child: Text(_refeicaoId == null ? 'Adicionar' : 'Salvar'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFF0BAB7C),
+                    foregroundColor: Color(0xFFFBFAF3),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+              ),
             ),
+            if (_refeicaoId != null)
+              SizedBox(height: 10),
+            if (_refeicaoId != null)
+              FractionallySizedBox(
+                widthFactor: 0.9, // 90% da largura disponível
+                child: SizedBox(
+                  height: 50, // Altura constante
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // Lógica para exclusão de refeição
+                      CustomAlertDialog.show(
+                        context: context,
+                        title: 'Excluir refeição',
+                        content: 'Você tem certeza que deseja excluir esta refeição?',
+                        onConfirm: () async {
+                          await _authService.excluirRefeicao(
+                            userId: widget.userId,
+                            refeicaoId: _refeicaoId!,
+                          );
+                          Navigator.pop(context); // Fecha a tela após exclusão
+                        },
+                      );
+                    },
+                    child: Text('Excluir'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      foregroundColor: Color(0xFFFBFAF3),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
