@@ -6,6 +6,45 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
+class Usuario {
+  String id;
+  String nome;
+  String email;
+  String dataNascimento;
+  String tipoDiabetes;
+  String? profileImageUrl;
+
+  Usuario({
+    required this.id,
+    required this.nome,
+    required this.email,
+    required this.dataNascimento,
+    required this.tipoDiabetes,
+    this.profileImageUrl,
+  });
+
+  factory Usuario.fromMap(String id, Map<String, dynamic> data) {
+    return Usuario(
+      id: id,
+      nome: data['nome'] ?? '',
+      email: data['email'] ?? '',
+      dataNascimento: data['dataNascimento'] ?? '',
+      tipoDiabetes: data['tipoDiabetes'] ?? '',
+      profileImageUrl: data['profile_image_url'],
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'nome': nome,
+      'email': email,
+      'dataNascimento': dataNascimento,
+      'tipoDiabetes': tipoDiabetes,
+      if (profileImageUrl != null) 'profile_image_url': profileImageUrl,
+    };
+  }
+}
+
 class HomeScreen extends StatefulWidget {
   final User user;
 
@@ -16,7 +55,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late Future<Map<String, dynamic>> _userData;
+  late Future<Usuario> _userData;
   File? _selectedImage;
 
   @override
@@ -25,7 +64,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _userData = _getUserData();
   }
 
-  Future<Map<String, dynamic>> _getUserData() async {
+  Future<Usuario> _getUserData() async {
     final userDoc = await FirebaseFirestore.instance
         .collection('usuarios')
         .doc(widget.user.uid)
@@ -47,7 +86,7 @@ class _HomeScreenState extends State<HomeScreen> {
       userData['glucose'] = null;
     }
 
-    return userData;
+    return Usuario.fromMap(widget.user.uid, userData);
   }
 
   @override
@@ -60,7 +99,7 @@ class _HomeScreenState extends State<HomeScreen> {
         onBackButtonPressed: () {},
         backgroundColor: Color(0xFF0BAB7C),
       ),
-      body: FutureBuilder<Map<String, dynamic>>(
+      body: FutureBuilder<Usuario>(
         future: _userData,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -71,9 +110,9 @@ class _HomeScreenState extends State<HomeScreen> {
             return Center(child: Text('Nenhum dado encontrado'));
           }
 
-          final userData = snapshot.data!;
-          final lastGlucose = userData['glucose'] != null
-              ? 'Última: ${userData['glucose']} mg/dL'
+          final usuario = snapshot.data!;
+          final lastGlucose = usuario.profileImageUrl != null
+              ? 'Última: ${usuario.profileImageUrl} mg/dL'
               : 'Sem registro de glicose';
 
           return SingleChildScrollView(
@@ -82,7 +121,7 @@ class _HomeScreenState extends State<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'Olá, ${userData['nome']}!',
+                  'Olá, ${usuario.nome}!',
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -221,6 +260,7 @@ class _HomeScreenState extends State<HomeScreen> {
               final doc = notes[index];
               final note = doc.data() as Map<String, dynamic>;
               final date = (note['timestamp'] as Timestamp).toDate();
+              final imageUrl = note['imagemUrl'] as String?;
 
               return Card(
                 margin: EdgeInsets.symmetric(horizontal: 8.0),
@@ -251,7 +291,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Nota rápida',
+                                  note['titulo'] ?? '',
                                   style: TextStyle(
                                     fontSize: 20,
                                     fontWeight: FontWeight.bold,
@@ -260,27 +300,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                                 SizedBox(height: 5),
                                 Text(
-                                  note['text'],
+                                  '${date.day}/${date.month}/${date.year}',
                                   style: TextStyle(
                                     fontSize: 16,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                if (note['imageUrl'] != null)
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 8.0),
-                                    child: ElevatedButton(
-                                      onPressed: () {
-                                        _showImageDialog(note['imageUrl']!);
-                                      },
-                                      child: Text('Visualizar Imagem'),
-                                    ),
-                                  ),
-                                Text(
-                                  'Data: ${date.day}/${date.month}/${date.year}',
-                                  style: TextStyle(
-                                    fontSize: 14,
                                     color: Colors.white70,
                                   ),
                                 ),
@@ -289,29 +311,57 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ],
                       ),
-                      Spacer(),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          IconButton(
-                            icon: Icon(Icons.edit, color: Colors.white),
+                      SizedBox(height: 20),
+                      Expanded(
+                        child: Text(
+                          note['descricao'] ?? '',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.white70,
+                          ),
+                        ),
+                      ),
+                      if (imageUrl != null && imageUrl.isNotEmpty)
+                        Align(
+                          alignment: Alignment.bottomRight,
+                          child: ElevatedButton(
                             onPressed: () {
-                              _addOrEditNote(
-                                noteId: doc.id,
-                                currentText: note['text'],
-                                currentImageUrl: note['imageUrl'],
-                              );
+                              _showImageDialog(context, imageUrl);
                             },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20.0),
+                              ),
+                            ),
+                            child: Text(
+                              'Ver Imagem',
+                              style: TextStyle(color: Color(0xFF0BAB7C)),
+                            ),
                           ),
-                          IconButton(
-                            icon: Icon(Icons.delete,
-                                color: const Color.fromARGB(255, 255, 12, 12)),
-                            onPressed: () async {
-                              await _deleteNote(doc.id);
-                              setState(() {});
-                            },
-                          ),
-                        ],
+                        ),
+                      Align(
+                        alignment: Alignment.bottomRight,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            IconButton(
+                              icon: Icon(Icons.edit, color: Colors.white70),
+                              onPressed: () {
+                                _showEditNoteBottomSheet(context, doc);
+                              },
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.delete,
+                                  color:
+                                      const Color.fromARGB(179, 249, 34, 34)),
+                              onPressed: () async {
+                                await doc.reference.delete();
+                                setState(() {});
+                              },
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -324,118 +374,30 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _showImageDialog(String imageUrl) {
+  void _showImageDialog(BuildContext context, String imageUrl) {
     showDialog(
       context: context,
-      builder: (context) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          child: GestureDetector(
-            onTap: () => Navigator.of(context).pop(),
-            child: Container(
-              width: double.infinity,
-              height: double.infinity,
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: NetworkImage(imageUrl),
-                  fit: BoxFit.contain,
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildAddNoteButton(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        _addOrEditNote();
-      },
-      child: Container(
-        padding: const EdgeInsets.all(16.0),
-        decoration: BoxDecoration(
-          color: Color(0xFFC7F4C2),
-          borderRadius: BorderRadius.circular(20.0),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 8.0,
-              offset: Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Center(
-          child: Text(
-            'Adicionar Nota',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF0BAB7C),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _addOrEditNote({
-    String? noteId,
-    String? currentText,
-    String?
-        currentImageUrl, // Agora estamos recebendo a URL da imagem existente
-  }) {
-    TextEditingController textController =
-        TextEditingController(text: currentText);
-
-    showModalBottomSheet(
-      context: context,
       builder: (BuildContext context) {
-        return Padding(
-          padding: EdgeInsets.all(16.0),
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20.0),
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(
-                controller: textController,
-                decoration: InputDecoration(
-                  hintText: 'Escreva sua nota...',
-                ),
-              ),
-              SizedBox(height: 10),
+              Image.network(imageUrl),
+              SizedBox(height: 20),
               ElevatedButton(
-                onPressed: () async {
-                  final pickedImage = await ImagePicker().pickImage(
-                    source: ImageSource.gallery,
-                  );
-                  if (pickedImage != null) {
-                    setState(() {
-                      _selectedImage = File(pickedImage.path);
-                    });
-                  }
-                },
-                child: Text('Selecionar Imagem'),
-              ),
-              SizedBox(height: 10),
-              ElevatedButton(
-                onPressed: () async {
-                  if (noteId == null) {
-                    await _saveNote(
-                      textController.text,
-                      _selectedImage,
-                    );
-                  } else {
-                    await _updateNote(
-                      noteId,
-                      textController.text,
-                      currentImageUrl, // Passando a URL da imagem existente
-                    );
-                  }
+                onPressed: () {
                   Navigator.pop(context);
-                  setState(() {});
                 },
-                child: Text(noteId == null ? 'Salvar Nota' : 'Atualizar Nota'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color(0xFF0BAB7C),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20.0),
+                  ),
+                ),
+                child: Text('Fechar'),
               ),
             ],
           ),
@@ -444,63 +406,293 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<void> _saveNote(String text, File? imageFile) async {
-    String? imageUrl;
-    if (imageFile != null) {
-      imageUrl = await _uploadImage(imageFile);
-    }
+  void _showEditNoteBottomSheet(BuildContext context, DocumentSnapshot doc) {
+    final note = doc.data() as Map<String, dynamic>;
+    final titleController = TextEditingController(text: note['titulo']);
+    final descriptionController =
+        TextEditingController(text: note['descricao']);
+    String? imageUrl = note['imagemUrl'];
 
-    await FirebaseFirestore.instance
-        .collection('usuarios')
-        .doc(widget.user.uid)
-        .collection('notas')
-        .add({
-      'text': text,
-      'imageUrl': imageUrl,
-      'timestamp': Timestamp.now(),
-    });
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
+      ),
+      isScrollControlled: true,
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+            left: 16.0,
+            right: 16.0,
+            top: 16.0,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Editar Nota',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF0BAB7C),
+                  ),
+                ),
+                SizedBox(height: 20),
+                TextField(
+                  controller: titleController,
+                  decoration: InputDecoration(
+                    labelText: 'Título',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                SizedBox(height: 20),
+                TextField(
+                  controller: descriptionController,
+                  decoration: InputDecoration(
+                    labelText: 'Descrição',
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 3,
+                ),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () async {
+                    final pickedFile = await ImagePicker().pickImage(
+                      source: ImageSource.gallery,
+                    );
+
+                    if (pickedFile != null) {
+                      setState(() {
+                        _selectedImage = File(pickedFile.path);
+                      });
+                    }
+                  },
+                  child: Text('Selecionar Imagem'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFF0BAB7C),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20.0),
+                    ),
+                    padding: EdgeInsets.symmetric(vertical: 15),
+                    textStyle: TextStyle(color: Color(0xFFFBFAF3)),
+                  ),
+                ),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () async {
+                    final title = titleController.text;
+                    final description = descriptionController.text;
+
+                    if (title.isEmpty || description.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Preencha todos os campos')),
+                      );
+                      return;
+                    }
+
+                    String? updatedImageUrl = imageUrl;
+                    if (_selectedImage != null) {
+                      final storageRef = FirebaseStorage.instance
+                          .ref()
+                          .child('notas_imagens')
+                          .child(
+                              '${DateTime.now().millisecondsSinceEpoch}.jpg');
+
+                      final uploadTask =
+                          await storageRef.putFile(_selectedImage!);
+                      updatedImageUrl = await uploadTask.ref.getDownloadURL();
+                    }
+
+                    final updatedNote = {
+                      'titulo': title,
+                      'descricao': description,
+                      'imagemUrl': updatedImageUrl ?? '',
+                    };
+
+                    await doc.reference.update(updatedNote);
+
+                    Navigator.pop(context);
+                    setState(() {});
+                  },
+                  child: Text('Salvar'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFF0BAB7C),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20.0),
+                    ),
+                    padding: EdgeInsets.symmetric(vertical: 15),
+                    textStyle: TextStyle(color: Color(0xFFFBFAF3)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
-  Future<void> _updateNote(
-    String noteId,
-    String text,
-    String? imageUrl,
-  ) async {
-    await FirebaseFirestore.instance
-        .collection('usuarios')
-        .doc(widget.user.uid)
-        .collection('notas')
-        .doc(noteId)
-        .update({
-      'text': text,
-      'imageUrl': imageUrl,
-      'timestamp': Timestamp.now(),
-    });
+  Widget _buildAddNoteButton(BuildContext context) {
+    return ElevatedButton.icon(
+      onPressed: () {
+        _showAddNoteBottomSheet(context);
+      },
+      icon: Icon(Icons.add),
+      label: Text('Adicionar Nota'),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Color(0xFF0BAB7C),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.0),
+        ),
+        padding: EdgeInsets.symmetric(vertical: 15),
+        foregroundColor: Color(0xFFFBFAF3),
+        textStyle: TextStyle(
+            color: Color(0xFFFBFAF3),
+            fontSize: 18,
+            fontWeight: FontWeight.bold),
+      ),
+    );
   }
 
-  Future<void> _deleteNote(String noteId) async {
-    await FirebaseFirestore.instance
-        .collection('usuarios')
-        .doc(widget.user.uid)
-        .collection('notas')
-        .doc(noteId)
-        .delete();
-  }
+  void _showAddNoteBottomSheet(BuildContext context) {
+    final titleController = TextEditingController();
+    final descriptionController = TextEditingController();
 
-  Future<String> _uploadImage(File imageFile) async {
-    final storageRef = FirebaseStorage.instance
-        .ref()
-        .child('notesImages')
-        .child(widget.user.uid)
-        .child('${DateTime.now().millisecondsSinceEpoch}.jpg');
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
+      ),
+      isScrollControlled: true,
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+            left: 16.0,
+            right: 16.0,
+            top: 16.0,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Adicionar Nova Nota',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF0BAB7C),
+                  ),
+                ),
+                SizedBox(height: 20),
+                TextField(
+                  controller: titleController,
+                  decoration: InputDecoration(
+                    labelText: 'Título',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                SizedBox(height: 20),
+                TextField(
+                  controller: descriptionController,
+                  decoration: InputDecoration(
+                    labelText: 'Descrição',
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 3,
+                ),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () async {
+                    final pickedFile = await ImagePicker().pickImage(
+                      source: ImageSource.gallery,
+                    );
 
-    final uploadTask = storageRef.putFile(imageFile);
-    final snapshot = await uploadTask.whenComplete(() {});
-    return await snapshot.ref.getDownloadURL();
-  }
+                    if (pickedFile != null) {
+                      setState(() {
+                        _selectedImage = File(pickedFile.path);
+                      });
+                    }
+                  },
+                  child: Text('Selecionar Imagem'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFF0BAB7C),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20.0),
+                    ),
+                    padding: EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+                    foregroundColor: Color(0xFFFBFAF3),
+                    textStyle: TextStyle(
+                        color: Color(0xFFFBFAF3),
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold),
+                  ),
+                ),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () async {
+                    final title = titleController.text;
+                    final description = descriptionController.text;
 
-  Future<void> _deleteImage(String imageUrl) async {
-    final storageRef = FirebaseStorage.instance.refFromURL(imageUrl);
-    await storageRef.delete();
+                    if (title.isEmpty || description.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Preencha todos os campos')),
+                      );
+                      return;
+                    }
+
+                    String? imageUrl;
+                    if (_selectedImage != null) {
+                      final storageRef = FirebaseStorage.instance
+                          .ref()
+                          .child('notas_imagens')
+                          .child(
+                              '${DateTime.now().millisecondsSinceEpoch}.jpg');
+
+                      final uploadTask =
+                          await storageRef.putFile(_selectedImage!);
+                      imageUrl = await uploadTask.ref.getDownloadURL();
+                    }
+
+                    final newNote = {
+                      'titulo': title,
+                      'descricao': description,
+                      'imagemUrl': imageUrl ?? '',
+                      'timestamp': Timestamp.now(),
+                    };
+
+                    await FirebaseFirestore.instance
+                        .collection('usuarios')
+                        .doc(widget.user.uid)
+                        .collection('notas')
+                        .add(newNote);
+
+                    Navigator.pop(context);
+                    setState(() {});
+                  },
+                  child: Text('Salvar'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFF0BAB7C),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20.0),
+                    ),
+                    padding: EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+                    foregroundColor: Color(0xFFFBFAF3),
+                    textStyle: TextStyle(
+                      color: Color(0xFFFBFAF3),
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 20),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 }
