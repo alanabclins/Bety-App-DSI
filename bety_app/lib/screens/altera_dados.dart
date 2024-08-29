@@ -23,8 +23,10 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
   late TextEditingController _tipoDiabetesController;
   late TextEditingController _dataNascimentoController;
   late TextEditingController _emailController;
-  late Future<List<Map<String, dynamic>>> _refeicoesFuture;
+  late Future<List<Refeicao>> _refeicoesFuture;
   final AuthService _authService = AuthService();
+  final RefeicaoService _refeicaoService = RefeicaoService();
+
 
   @override
   void initState() {
@@ -33,7 +35,7 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
     _tipoDiabetesController = TextEditingController(text: widget.userData['tipoDiabetes']);
     _dataNascimentoController = TextEditingController(text: widget.userData['dataNascimento']);
     _emailController = TextEditingController(text: widget.userData['email']);
-    _refeicoesFuture = _authService.obterRefeicoes(widget.user.uid);
+    _refeicoesFuture = _refeicaoService.getRefeicoes(widget.user.uid);
   }
 
   @override
@@ -122,7 +124,7 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
     ).then((_) {
       // Atualize o estado após retornar da nova tela
       setState(() {
-        _refeicoesFuture = _authService.obterRefeicoes(widget.user.uid);
+        _refeicoesFuture = _refeicaoService.getRefeicoes(widget.user.uid);
       });
     });
   }
@@ -203,7 +205,7 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
             ),
             SizedBox(height: 20.0),
             Expanded(
-              child: FutureBuilder<List<Map<String, dynamic>>>(
+              child: FutureBuilder<List<Refeicao>>(
                 future: _refeicoesFuture,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
@@ -223,7 +225,7 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
                     ),
                     items: [
                       ...refeicoes.map((refeicao) {
-                        final hora = (refeicao['hora'] as Timestamp).toDate();
+                        final hora = refeicao.hora;
                         final horaFormatada = DateFormat('HH:mm').format(hora);
 
                         return Builder(
@@ -240,7 +242,7 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
                                         children: [
                                           SizedBox(height: 18.0),
                                           Text(
-                                            refeicao['descricao'] ?? 'Sem descrição',
+                                            refeicao.descricao,
                                             style: TextStyle(fontSize: 20.0, color: Colors.white),
                                             textAlign: TextAlign.center,
                                           ),
@@ -268,7 +270,7 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
                                             ),
                                           ).then((_) {
                                             setState(() {
-                                              _refeicoesFuture = _authService.obterRefeicoes(widget.user.uid);
+                                              _refeicoesFuture = _refeicaoService.getRefeicoes(widget.user.uid);
                                             });
                                           });
                                         },
