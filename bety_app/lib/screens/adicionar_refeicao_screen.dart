@@ -3,6 +3,7 @@ import 'package:bety_sprint1/services/auth_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bety_sprint1/utils/custom_app_bar.dart';
 import 'package:bety_sprint1/utils/alert_dialog.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class Refeicao {
   final String? id;
@@ -49,7 +50,66 @@ class _AdicionarRefeicaoScreenState extends State<AdicionarRefeicaoScreen> {
   TimeOfDay? _selectedTime;
   final RefeicaoService _refeicaoService = RefeicaoService();
   Refeicao? _refeicao;
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
+    Future<void> _fetchAndNotify() async {
+    final refeicoes = await _refeicaoService.getRefeicoes(widget.userId);
+    final now = DateTime.now();
+
+    // Encontrar a próxima refeição
+    Refeicao? nextRefeicao = _findNextRefeicao(refeicoes, now);
+
+    if (nextRefeicao != null) {
+      // Exibir a notificação com a hora da próxima refeição
+      const AndroidNotificationDetails androidPlatformChannelSpecifics = AndroidNotificationDetails(
+        'refeicao_channel_id',
+        'Refeição Channel',
+        channelDescription: 'Canal para notificações de refeições',
+        importance: Importance.max,
+        priority: Priority.high,
+        showWhen: false,
+      );
+
+      const NotificationDetails platformChannelSpecifics = NotificationDetails(
+        android: androidPlatformChannelSpecifics,
+      );
+
+      await flutterLocalNotificationsPlugin.show(
+        0,
+        'Hora da Refeição',
+        'Sua próxima refeição é às ${nextRefeicao.hora.hour}:${nextRefeicao.hora.minute}',
+        platformChannelSpecifics,
+      );
+    }
+  }
+
+  Refeicao? _findNextRefeicao(List<Refeicao> refeicoes, DateTime currentTime) {
+    DateTime now = DateTime(currentTime.year, currentTime.month, currentTime.day, currentTime.hour, currentTime.minute);
+
+    Refeicao? nextRefeicao;
+    Duration shortestDuration = Duration(days: 365); // Um valor grande para começar
+
+    for (var refeicao in refeicoes) {
+      DateTime refeicaoDateTime = DateTime(
+        now.year,
+        now.month,
+        now.day,
+        refeicao.hora.hour,
+        refeicao.hora.minute,
+      );
+
+      if (refeicaoDateTime.isAfter(now)) {
+        Duration durationToRefeicao = refeicaoDateTime.difference(now);
+        if (durationToRefeicao < shortestDuration) {
+          shortestDuration = durationToRefeicao;
+          nextRefeicao = refeicao;
+        }
+      }
+    }
+
+    return nextRefeicao;
+  }
+  
   @override
   void initState() {
     super.initState();
@@ -59,6 +119,7 @@ class _AdicionarRefeicaoScreenState extends State<AdicionarRefeicaoScreen> {
       _selectedTime = TimeOfDay(hour: hora.hour, minute: hora.minute);
       _refeicao = widget.refeicao;
     }
+    _fetchAndNotify();
   }
 
   @override

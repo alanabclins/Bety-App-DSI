@@ -10,13 +10,26 @@ import 'screens/cadastro_screen.dart';
 import 'screens/notificacao_screen.dart';
 import 'screens/registro_glicemia.dart';
 import 'screens/mapa-screen.dart';
-import 'screens/tela_Perfil.dart'; // Certifique-se de importar a tela correta
+import 'screens/tela_Perfil.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/data/latest.dart' as tz;
+
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  tz.initializeTimeZones();
+
+  const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('@mipmap/ic_launcher');
+  final InitializationSettings initializationSettings = InitializationSettings(
+    android: initializationSettingsAndroid,
+  );
+
+  await flutterLocalNotificationsPlugin.initialize(initializationSettings);
 
   runApp(const MyApp());
 }
