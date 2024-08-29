@@ -4,9 +4,39 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bety_sprint1/utils/custom_app_bar.dart';
 import 'package:bety_sprint1/utils/alert_dialog.dart';
 
+class Refeicao {
+  final String? id;
+  final DateTime hora;
+  final String descricao;
+
+  Refeicao({
+    this.id,
+    required this.hora,
+    required this.descricao,
+  });
+
+  // Converte um DocumentSnapshot em um objeto Refeicao
+  factory Refeicao.fromFirestore(DocumentSnapshot doc) {
+    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+    return Refeicao(
+      id: doc.id,
+      hora: (data['hora'] as Timestamp).toDate(),
+      descricao: data['descricao'],
+    );
+  }
+
+  // Converte um objeto Refeicao em um Map<String, dynamic> para salvar no Firestore
+  Map<String, dynamic> toFirestore() {
+    return {
+      'hora': hora,
+      'descricao': descricao,
+    };
+  }
+}
+
 class AdicionarRefeicaoScreen extends StatefulWidget {
   final String userId;
-  final Map<String, dynamic>? refeicao; // Recebe uma refeição para edição
+  final Refeicao? refeicao; // Recebe uma refeição para edição
 
   AdicionarRefeicaoScreen({required this.userId, this.refeicao});
 
@@ -17,17 +47,17 @@ class AdicionarRefeicaoScreen extends StatefulWidget {
 class _AdicionarRefeicaoScreenState extends State<AdicionarRefeicaoScreen> {
   late TextEditingController _descricaoController;
   TimeOfDay? _selectedTime;
-  final AuthService _authService = AuthService();
-  String? _refeicaoId;
+  final RefeicaoService _refeicaoService = RefeicaoService();
+  Refeicao? _refeicao;
 
   @override
   void initState() {
     super.initState();
-    _descricaoController = TextEditingController(text: widget.refeicao?['descricao'] ?? '');
+    _descricaoController = TextEditingController(text: widget.refeicao?.descricao ?? '');
     if (widget.refeicao != null) {
-      final hora = (widget.refeicao!['hora'] as Timestamp).toDate();
+      final hora = widget.refeicao!.hora;
       _selectedTime = TimeOfDay(hour: hora.hour, minute: hora.minute);
-      _refeicaoId = widget.refeicao!['refeicaoId'];
+      _refeicao = widget.refeicao;
     }
   }
 
@@ -66,20 +96,26 @@ class _AdicionarRefeicaoScreenState extends State<AdicionarRefeicaoScreen> {
         _selectedTime!.minute,
       );
 
-      if (_refeicaoId != null) {
+      if (_refeicao != null) {
         // Atualizar refeição existente
-        await _authService.atualizarRefeicao(
-          userId: widget.userId,
-          refeicaoId: _refeicaoId!,
+        final refeicaoAtualizada = Refeicao(
+          id: _refeicao!.id,
           hora: hora,
           descricao: _descricaoController.text,
         );
+        await _refeicaoService.atualizarRefeicao(
+          userId: widget.userId,
+          refeicao: refeicaoAtualizada,
+        );
       } else {
         // Adicionar nova refeição
-        await _authService.registrarRefeicao(
-          userId: widget.userId,
+        final novaRefeicao = Refeicao(
           hora: hora,
           descricao: _descricaoController.text,
+        );
+        await _refeicaoService.adicionarRefeicao(
+          userId: widget.userId,
+          refeicao: novaRefeicao,
         );
       }
 
@@ -90,6 +126,17 @@ class _AdicionarRefeicaoScreenState extends State<AdicionarRefeicaoScreen> {
       );
     }
   }
+
+  void _deleteRefeicao() async {
+    if (_refeicao != null) {
+      await _refeicaoService.excluirRefeicao(
+        userId: widget.userId,
+        refeicaoId: _refeicao!.id!,
+      );
+      Navigator.pop(context); // Fecha a tela após exclusão
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -140,12 +187,10 @@ class _AdicionarRefeicaoScreenState extends State<AdicionarRefeicaoScreen> {
                       context: context,
                       title: 'Salvar refeição',
                       content: 'Você tem certeza que deseja salvar esta refeição?',
-                      onConfirm: () {
-                        _saveRefeicao();
-                      },
+                      onConfirm: _saveRefeicao,
                     );
                   },
-                  child: Text(_refeicaoId == null ? 'Adicionar' : 'Salvar'),
+                  child: Text(_refeicao == null ? 'Adicionar' : 'Salvar'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Color(0xFF0BAB7C),
                     foregroundColor: Color(0xFFFBFAF3),
@@ -156,27 +201,19 @@ class _AdicionarRefeicaoScreenState extends State<AdicionarRefeicaoScreen> {
                 ),
               ),
             ),
-            if (_refeicaoId != null)
+            if (_refeicao != null) ...[
               SizedBox(height: 10),
-            if (_refeicaoId != null)
               FractionallySizedBox(
                 widthFactor: 0.9, // 90% da largura disponível
                 child: SizedBox(
                   height: 50, // Altura constante
                   child: ElevatedButton(
                     onPressed: () {
-                      // Lógica para exclusão de refeição
                       CustomAlertDialog.show(
                         context: context,
                         title: 'Excluir refeição',
                         content: 'Você tem certeza que deseja excluir esta refeição?',
-                        onConfirm: () async {
-                          await _authService.excluirRefeicao(
-                            userId: widget.userId,
-                            refeicaoId: _refeicaoId!,
-                          );
-                          Navigator.pop(context); // Fecha a tela após exclusão
-                        },
+                        onConfirm: _deleteRefeicao,
                       );
                     },
                     child: Text('Excluir'),
@@ -190,6 +227,7 @@ class _AdicionarRefeicaoScreenState extends State<AdicionarRefeicaoScreen> {
                   ),
                 ),
               ),
+            ],
           ],
         ),
       ),

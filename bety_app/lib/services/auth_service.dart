@@ -4,7 +4,8 @@ import 'auth_email_service.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:path/path.dart' as path;
 import 'dart:io';
-//import 'package:intl/intl.dart';
+import 'package:bety_sprint1/screens/adicionar_refeicao_screen.dart';
+//import 'packag  e:intl/intl.dart';
 
 class AuthService {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
@@ -147,92 +148,6 @@ class AuthService {
     }
     return null;
   }
-
-  // Método para registrar uma refeição
-  Future<String?> registrarRefeicao({
-    required String userId,
-    required DateTime hora,
-    String? descricao,
-  }) async {
-    try {
-      //String horaFormatada =  "${hora.hour.toString().padLeft(2, '0')}:${hora.minute.toString().padLeft(2, '0')}";
-      await _firestore
-          .collection('usuarios')
-          .doc(userId)
-          .collection('refeicoes')
-          .add({
-        'hora': hora,
-        'descricao': descricao,
-      });
-    } on FirebaseException catch (e) {
-      return e.code;
-    }
-    return null;
-  }
-
-  // Método para obter todas as refeições de um usuário
-  Future<List<Map<String, dynamic>>> obterRefeicoes(String userId) async {
-    try {
-      QuerySnapshot querySnapshot = await _firestore
-          .collection('usuarios')
-          .doc(userId)
-          .collection('refeicoes')
-          .orderBy('hora')
-          .get();
-
-      return querySnapshot.docs.map((doc) {
-        var data = doc.data() as Map<String, dynamic>;
-        data['refeicaoId'] = doc.id; // Adiciona o documentId
-        return data;
-      }).toList();
-    } on FirebaseException catch (e) {
-      print('Erro ao obter refeições: $e');
-      return [];
-    }
-  }
-
-  Future<String?> atualizarRefeicao({
-  required String userId,
-  required String refeicaoId,
-  required DateTime hora,
-  required String descricao,
-}) async {
-  try {
-    await FirebaseFirestore.instance
-      .collection('usuarios')
-      .doc(userId)
-      .collection('refeicoes')
-      .doc(refeicaoId)
-      .update({
-        'hora': Timestamp.fromDate(hora),
-        'descricao': descricao,
-      });
-    return null;
-  } catch (e) {
-    return 'Erro ao atualizar refeição: $e';
-  }
-}
-
-
-   // Método para excluir uma refeição
-  Future<String?> excluirRefeicao({
-    required String userId,
-    required String refeicaoId,
-  }) async {
-    try {
-      // Remove o documento da refeição com o ID fornecido
-      await _firestore
-          .collection('usuarios')
-          .doc(userId)
-          .collection('refeicoes')
-          .doc(refeicaoId)
-          .delete();
-    } on FirebaseException catch (e) {
-      print('Erro ao excluir refeição: $e');
-      return e.code;
-    }
-    return null;
-  }
    // Adicionar registro de glicemia
   Future<String?> adicionarRegistroGlicemia({
     required String userId,
@@ -330,3 +245,39 @@ class StorageService {
     }
   }
 }
+
+class RefeicaoService {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  Future<void> adicionarRefeicao({
+    required String userId,
+    required Refeicao refeicao,
+  }) async {
+    await _firestore.collection('usuarios').doc(userId).collection('refeicoes').add(refeicao.toFirestore());
+  }
+
+  Future<void> atualizarRefeicao({
+    required String userId,
+    required Refeicao refeicao,
+  }) async {
+    if (refeicao.id != null) {
+      await _firestore.collection('usuarios').doc(userId).collection('refeicoes').doc(refeicao.id).update(refeicao.toFirestore());
+    } else {
+      throw Exception('Refeição sem ID');
+    }
+  }
+
+  Future<void> excluirRefeicao({
+    required String userId,
+    required String refeicaoId,
+  }) async {
+    await _firestore.collection('usuarios').doc(userId).collection('refeicoes').doc(refeicaoId).delete();
+  }
+
+  // Para obter uma lista de refeições
+  Future<List<Refeicao>> getRefeicoes(String userId) async {
+    QuerySnapshot snapshot = await _firestore.collection('usuarios').doc(userId).collection('refeicoes').get();
+    return snapshot.docs.map((doc) => Refeicao.fromFirestore(doc)).toList();
+  }
+}
+
