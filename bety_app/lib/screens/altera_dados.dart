@@ -4,9 +4,9 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:intl/intl.dart';
 import 'package:bety_sprint1/utils/alert_dialog.dart';
 import 'package:bety_sprint1/screens/adicionar_refeicao_screen.dart';
-import 'package:bety_sprint1/services/refeicao.dart';
+import 'package:bety_sprint1/models/refeicao.dart';
 import 'package:bety_sprint1/services/session_service.dart';
-import 'package:bety_sprint1/services/user.dart';
+import 'package:bety_sprint1/models/user.dart';
 
 class DadosCadastraisScreen extends StatefulWidget {
 

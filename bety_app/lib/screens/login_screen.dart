@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:bety_sprint1/services/session_service.dart';
-import 'package:bety_sprint1/services/user.dart';
+import 'package:bety_sprint1/models/user.dart';
 
 class LoginScreen extends StatefulWidget {
   @override

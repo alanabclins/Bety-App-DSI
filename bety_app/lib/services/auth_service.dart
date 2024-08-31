@@ -1,6 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'auth_email_service.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:path/path.dart' as path;
 import 'dart:io';
@@ -10,7 +9,6 @@ import 'package:bety_sprint1/screens/adicionar_refeicao_screen.dart';
 class AuthService {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final AuthEmailService _authEmailService = AuthEmailService();
 
   // Função de autenticação
   Future<String?> entrarUsuario({
@@ -34,45 +32,6 @@ class AuthService {
           return 'Senha incorreta';
       }
       return e.code;
-    }
-    return null;
-  }
-
-  // Função para atualizar o email
-  Future<String?> atualizarEmail(String novoEmail) async {
-    final user = _firebaseAuth.currentUser;
-
-    if (user == null) {
-      return 'Nenhum usuário autenticado.';
-    }
-
-    try {
-      // Utilize a função verifyBeforeUpdateEmail para atualizar o email no Firebase Authentication
-      await _authEmailService.verifyBeforeUpdateEmail(novoEmail);
-
-      // Recarregue o usuário para garantir que o novo email esteja atualizado
-      await user.reload();
-      User? updatedUser = _firebaseAuth.currentUser;
-
-      if (updatedUser != null) {
-        print('Email atualizado com sucesso');
-      }
-    } on FirebaseAuthException catch (e) {
-      switch (e.code) {
-        case 'requires-recent-login':
-          return 'É necessário reautenticar o usuário para atualizar o email.';
-        case 'invalid-email':
-          return 'O email fornecido é inválido.';
-        case 'email-already-in-use':
-          return 'O email já está em uso por outra conta.';
-        case 'user-not-found':
-          return 'Usuário não encontrado.';
-        default:
-          return e.code;
-      }
-    } catch (e) {
-      print('Erro ao atualizar o email: $e');
-      return 'Erro ao atualizar o email.';
     }
     return null;
   }

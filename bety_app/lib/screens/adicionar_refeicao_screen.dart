@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:bety_sprint1/utils/custom_app_bar.dart';
 import 'package:bety_sprint1/utils/alert_dialog.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:bety_sprint1/services/refeicao.dart';
+import 'package:bety_sprint1/models/refeicao.dart';
 import 'package:bety_sprint1/services/session_service.dart';
-import 'package:bety_sprint1/services/user.dart';
+import 'package:bety_sprint1/models/user.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AdicionarRefeicaoScreen extends StatefulWidget {

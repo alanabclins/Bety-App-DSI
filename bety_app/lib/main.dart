@@ -16,7 +16,7 @@ import 'screens/mapa-screen.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:bety_sprint1/services/session_service.dart';
-import 'package:bety_sprint1/services/user.dart';
+import 'package:bety_sprint1/models/user.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
