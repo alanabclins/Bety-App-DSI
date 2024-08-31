@@ -1,6 +1,6 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:bety_sprint1/services/auth_service.dart';
+import 'package:bety_sprint1/services/session_service.dart';
+import 'package:bety_sprint1/services/user.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -113,23 +113,13 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: ElevatedButton(
                         onPressed: () async {
                           if (_formKey.currentState!.validate()) {
-                            String? result = await _authService.entrarUsuario(
+                            User? user = await _authService.signIn(
                               email: _emailController.text,
-                              senha: _senhaController.text,
+                              password: _senhaController.text,
                             );
 
-                            if (result == null) {
-                              User? user = FirebaseAuth.instance.currentUser;
-                              if (user != null) {
-                                Navigator.pushReplacementNamed(
-                                    context, '/home');
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Erro ao obter usuário'),
-                                  ),
-                                );
-                              }
+                            if (user != null) {
+                              Navigator.pushReplacementNamed(context, '/home');
                             } else {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(

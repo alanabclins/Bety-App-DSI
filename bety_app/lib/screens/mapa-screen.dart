@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
-
-import 'package:bety_sprint1/utils/custom_app_bar.dart'; // Certifique-se de que essa linha está correta para o caminho do CustomAppBar
+import 'package:geocoding/geocoding.dart';
 
 class MapaScreen extends StatefulWidget {
   final User user;
@@ -27,48 +25,42 @@ class _MapaScreenState extends State<MapaScreen> {
   @override
   void initState() {
     super.initState();
-    _getCurrentLocation();
+    _getLocationStream();
     _loadSavedLocation();
   }
 
-  void _getCurrentLocation() async {
-    Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high);
-    setState(() {
-      _currentLocation = LatLng(position.latitude, position.longitude);
+  void _getLocationStream() {
+    // Configura a escuta contínua da localização do usuário
+    Geolocator.getPositionStream(locationSettings: const LocationSettings(accuracy: LocationAccuracy.high))
+        .listen((Position position) {
+      setState(() {
+        _currentLocation = LatLng(position.latitude, position.longitude);
+      });
+
+      // Atualiza a posição da câmera no mapa
+      mapController.animateCamera(
+        CameraUpdate.newLatLng(_currentLocation!),
+      );
+
+      // Atualiza a distância até o local salvo
+      _calculateDistanceToSavedLocation();
     });
   }
 
   void _loadSavedLocation() async {
     final userId = widget.user.uid;
-    DocumentSnapshot userDoc =
-        await FirebaseFirestore.instance.collection('usuarios').doc(userId).get();
-    
+    DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('usuarios').doc(userId).get();
     if (userDoc.exists) {
       final data = userDoc.data() as Map<String, dynamic>;
-      
       if (data.containsKey('saved_location')) {
-        LatLng savedLatLng = LatLng(
-          data['saved_location']['latitude'],
-          data['saved_location']['longitude'],
-        );
-
-        // Converte as coordenadas em um endereço legível
-        List<Placemark> placemarks = await placemarkFromCoordinates(
-            savedLatLng.latitude, savedLatLng.longitude);
-
-        if (placemarks.isNotEmpty) {
-          Placemark placemark = placemarks.first;
-          String fullAddress =
-              '${placemark.street}, ${placemark.locality}, ${placemark.country}';
-          
-          // Atualiza o controlador da barra de pesquisa com o endereço
-          setState(() {
-            _addressController.text = fullAddress;
-            _savedLocation = savedLatLng;
-            _savedAddress = fullAddress;
-          });
-        }
+        setState(() {
+          _savedLocation = LatLng(
+            data['saved_location']['latitude'],
+            data['saved_location']['longitude'],
+          );
+          _addressController.text = '${_savedLocation!.latitude}, ${_savedLocation!.longitude}';
+          _updateSavedAddressAndDistance(_savedLocation!);
+        });
       }
     }
   }
@@ -83,18 +75,13 @@ class _MapaScreenState extends State<MapaScreen> {
   }
 
   Future<void> _updateSavedAddressAndDistance(LatLng location) async {
-    List<Placemark> placemarks =
-        await placemarkFromCoordinates(location.latitude, location.longitude);
-    
+    List<Placemark> placemarks = await placemarkFromCoordinates(location.latitude, location.longitude);
     if (placemarks.isNotEmpty) {
       Placemark placemark = placemarks.first;
       setState(() {
-        _savedAddress =
-            '${placemark.street}, ${placemark.locality}, ${placemark.country}';
-        _addressController.text = _savedAddress!;
+        _savedAddress = '${placemark.street}, ${placemark.locality}, ${placemark.country}';
       });
     }
-
     _calculateDistanceToSavedLocation();
   }
 
@@ -107,7 +94,7 @@ class _MapaScreenState extends State<MapaScreen> {
         _savedLocation!.longitude,
       );
       setState(() {
-        _distanceToSavedLocation = distance / 1000; // Convertendo para km
+        _distanceToSavedLocation = distance / 1000; // Convertendo para quilômetros
       });
     }
   }
@@ -115,7 +102,6 @@ class _MapaScreenState extends State<MapaScreen> {
   Future<void> _searchAddress() async {
     try {
       List<Location> locations = await locationFromAddress(_addressController.text);
-      
       if (locations.isNotEmpty) {
         Location location = locations.first;
         LatLng latLng = LatLng(location.latitude, location.longitude);
@@ -163,14 +149,7 @@ class _MapaScreenState extends State<MapaScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBar( // Custom AppBar
-        mainTitle: 'Mapa',
-        subtitle: 'Explore e Salve Locais',
-        showLogoutButton: false,
-        onBackButtonPressed: () {
-          Navigator.pop(context);
-        },
-      ),
+      appBar: AppBar(title: Text('Mapa')),
       body: Column(
         children: [
           Expanded(
@@ -190,20 +169,16 @@ class _MapaScreenState extends State<MapaScreen> {
                       title: 'Localização Salva',
                       snippet: _savedAddress ?? 'Endereço não disponível',
                     ),
-                    icon: BitmapDescriptor.defaultMarkerWithHue(
-                      BitmapDescriptor.hueRed,
-                    ),
+                    icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
                   ),
                 if (_currentLocation != null)
                   Marker(
                     markerId: MarkerId('currentLocation'),
                     position: _currentLocation!,
                     infoWindow: InfoWindow(
-                      title: 'Sua Localização',
+                      title: 'Sua Localização Atual',
                     ),
-                    icon: BitmapDescriptor.defaultMarkerWithHue(
-                      BitmapDescriptor.hueBlue,
-                    ),
+                    icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue), // Marcador azul
                   ),
               },
               onTap: (LatLng location) {
@@ -240,7 +215,6 @@ class _MapaScreenState extends State<MapaScreen> {
                     icon: Icon(Icons.edit),
                     onPressed: () {
                       _addressController.text = _savedAddress ?? '';
-                      FocusScope.of(context).requestFocus(FocusNode()); // Abre o teclado
                     },
                   ),
                 ),

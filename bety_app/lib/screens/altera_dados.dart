@@ -1,18 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bety_sprint1/utils/custom_app_bar.dart';
 import 'package:carousel_slider/carousel_slider.dart';
-import 'package:bety_sprint1/services/auth_service.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:bety_sprint1/utils/alert_dialog.dart';
 import 'package:bety_sprint1/screens/adicionar_refeicao_screen.dart';
+import 'package:bety_sprint1/services/refeicao.dart';
+import 'package:bety_sprint1/services/session_service.dart';
+import 'package:bety_sprint1/services/user.dart';
 
 class DadosCadastraisScreen extends StatefulWidget {
-  final User user;
-  final Map<String, dynamic> userData;
 
-  DadosCadastraisScreen({required this.user, required this.userData});
+  DadosCadastraisScreen();
 
   @override
   _DadosCadastraisScreenState createState() => _DadosCadastraisScreenState();
@@ -23,19 +21,28 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
   late TextEditingController _tipoDiabetesController;
   late TextEditingController _dataNascimentoController;
   late TextEditingController _emailController;
-  late Future<List<Refeicao>> _refeicoesFuture;
-  final AuthService _authService = AuthService();
+  late Stream<List<Refeicao>> _refeicoesStream;
   final RefeicaoService _refeicaoService = RefeicaoService();
-
+  final SessionManager _sessionManager = SessionManager();
+  final AuthService _authService = AuthService();
+  final UserService _userService = UserService();
 
   @override
   void initState() {
     super.initState();
-    _nomeController = TextEditingController(text: widget.userData['nome']);
-    _tipoDiabetesController = TextEditingController(text: widget.userData['tipoDiabetes']);
-    _dataNascimentoController = TextEditingController(text: widget.userData['dataNascimento']);
-    _emailController = TextEditingController(text: widget.userData['email']);
-    _refeicoesFuture = _refeicaoService.getRefeicoes(widget.user.uid);
+    final currentUser = _sessionManager.currentUser;
+    if (currentUser != null) {
+      _nomeController = TextEditingController(text: currentUser.nome);
+      _tipoDiabetesController = TextEditingController(text: currentUser.tipoDeDiabetes);
+      _dataNascimentoController = TextEditingController(
+        text: DateFormat('dd/MM/yyyy').format(currentUser.dataDeNascimento)
+      );
+      _emailController = TextEditingController(text: currentUser.email);
+
+      _refeicoesStream = _refeicaoService.getRefeicoesPorUsuario(currentUser.uid);
+    } else {
+      print('Usuário não está logado.');
+    }
   }
 
   @override
@@ -45,18 +52,6 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
     _dataNascimentoController.dispose();
     _emailController.dispose();
     super.dispose();
-  }
-
-  Future<void> _saveData() async {
-    try {
-      await FirebaseFirestore.instance.collection('usuarios').doc(widget.user.uid).update({
-        'nome': _nomeController.text,
-        'tipoDiabetes': _tipoDiabetesController.text,
-        'dataNascimento': _dataNascimentoController.text,
-      });
-    } catch (e) {
-      print('Erro ao salvar dados: $e');
-    }
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -74,34 +69,67 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
     }
   }
 
+  Future<void> _saveData() async {
+    final currentUser = _sessionManager.currentUser;
+
+    if (currentUser == null) {
+      print('Erro: Usuário não está logado.');
+      return;
+    }
+
+    try {
+      // Atualize os campos do usuário com os dados dos controladores
+      final updatedUser = User(
+        uid: currentUser.uid,
+        email: currentUser.email,
+        nome: _nomeController.text,
+        tipoDeDiabetes: _tipoDiabetesController.text,
+        dataDeNascimento: DateFormat('dd/MM/yyyy').parse(_dataNascimentoController.text),
+        fotoPerfilUrl: currentUser.fotoPerfilUrl, // Mantém a foto de perfil existente
+      );
+
+      // Atualiza o usuário no Firestore
+      await _userService.updateUserData(updatedUser);
+      await _authService.updateUserInSession();
+    } catch (e) {
+      print('Erro ao salvar dados: $e');
+    }
+  }
+
   void _handleButtonPress() async {
-    final currentUser = FirebaseAuth.instance.currentUser;
+    final currentUser = _sessionManager.currentUser;
     final email = currentUser?.email;
     final newEmail = _emailController.text.trim();
+
     if (email != newEmail) {
       await _saveData();
+
       try {
-        String? emailUpdateError = await _authService.atualizarEmail(newEmail);
-        if (emailUpdateError != null) {
-          print('Erro ao atualizar email: $emailUpdateError');
-        } else {
-          await FirebaseAuth.instance.signOut();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Verifique seu email antes do próximo login para que seja alterado'),
-              duration: Duration(seconds: 3),
-            ),
+        await _authService.updateEmail(newEmail);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Verifique seu e-mail para confirmar a alteração.'),
+            duration: Duration(seconds: 3),
+          ),
+        );
+
+        await _authService.signOut();
+        if (mounted) {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/login',
+            (route) => false,
           );
-          if (mounted) {
-            Navigator.pushNamedAndRemoveUntil(
-              context,
-              '/login',
-              (route) => false,
-            );
-          }
         }
       } catch (e) {
-        print('Erro ao enviar email de verificação: $e');
+        print('Erro ao enviar e-mail de verificação: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao atualizar e-mail.'),
+            duration: Duration(seconds: 3),
+          ),
+        );
       }
     } else {
       await _saveData();
@@ -113,20 +141,6 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
         );
       }
     }
-  }
-
-  void _addNewRefeicao() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => AdicionarRefeicaoScreen(userId: widget.user.uid),
-      ),
-    ).then((_) {
-      // Atualize o estado após retornar da nova tela
-      setState(() {
-        _refeicoesFuture = _refeicaoService.getRefeicoes(widget.user.uid);
-      });
-    });
   }
 
   @override
@@ -205,8 +219,8 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
             ),
             SizedBox(height: 20.0),
             Expanded(
-              child: FutureBuilder<List<Refeicao>>(
-                future: _refeicoesFuture,
+              child: StreamBuilder<List<Refeicao>>(
+                stream: _refeicoesStream,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return Center(child: CircularProgressIndicator());
@@ -226,7 +240,8 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
                     items: [
                       ...refeicoes.map((refeicao) {
                         final hora = refeicao.hora;
-                        final horaFormatada = DateFormat('HH:mm').format(hora);
+                        final horaDateTime = hora.toDate();
+                        final horaFormatada = DateFormat('HH:mm').format(horaDateTime);
 
                         return Builder(
                           builder: (BuildContext context) {
@@ -264,13 +279,12 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
                                             context,
                                             MaterialPageRoute(
                                               builder: (context) => AdicionarRefeicaoScreen(
-                                                userId: widget.user.uid,
                                                 refeicao: refeicao,
                                               ),
                                             ),
                                           ).then((_) {
                                             setState(() {
-                                              _refeicoesFuture = _refeicaoService.getRefeicoes(widget.user.uid);
+                                              _refeicoesStream = _refeicaoService.getRefeicoesPorUsuario(_sessionManager.currentUser!.uid);
                                             });
                                           });
                                         },
@@ -290,7 +304,14 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
                             child: Card(
                               color: Color(0xFF0BAB7C),
                               child: InkWell(
-                                onTap: _addNewRefeicao,
+                                onTap: (){
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => AdicionarRefeicaoScreen(), // Substitua por sua tela de destino
+                                    ),
+                                  );
+                                },
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [

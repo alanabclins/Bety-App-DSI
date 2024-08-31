@@ -1,45 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:bety_sprint1/services/auth_service.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bety_sprint1/utils/custom_app_bar.dart';
 import 'package:bety_sprint1/utils/alert_dialog.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-
-class Refeicao {
-  final String? id;
-  final DateTime hora;
-  final String descricao;
-
-  Refeicao({
-    this.id,
-    required this.hora,
-    required this.descricao,
-  });
-
-  // Converte um DocumentSnapshot em um objeto Refeicao
-  factory Refeicao.fromFirestore(DocumentSnapshot doc) {
-    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-    return Refeicao(
-      id: doc.id,
-      hora: (data['hora'] as Timestamp).toDate(),
-      descricao: data['descricao'],
-    );
-  }
-
-  // Converte um objeto Refeicao em um Map<String, dynamic> para salvar no Firestore
-  Map<String, dynamic> toFirestore() {
-    return {
-      'hora': hora,
-      'descricao': descricao,
-    };
-  }
-}
+import 'package:bety_sprint1/services/refeicao.dart';
+import 'package:bety_sprint1/services/session_service.dart';
+import 'package:bety_sprint1/services/user.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AdicionarRefeicaoScreen extends StatefulWidget {
-  final String userId;
   final Refeicao? refeicao; // Recebe uma refeição para edição
 
-  AdicionarRefeicaoScreen({required this.userId, this.refeicao});
+  AdicionarRefeicaoScreen({this.refeicao});
 
   @override
   _AdicionarRefeicaoScreenState createState() => _AdicionarRefeicaoScreenState();
@@ -52,74 +23,15 @@ class _AdicionarRefeicaoScreenState extends State<AdicionarRefeicaoScreen> {
   Refeicao? _refeicao;
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
-    Future<void> _fetchAndNotify() async {
-    final refeicoes = await _refeicaoService.getRefeicoes(widget.userId);
-    final now = DateTime.now();
-
-    // Encontrar a próxima refeição
-    Refeicao? nextRefeicao = _findNextRefeicao(refeicoes, now);
-
-    if (nextRefeicao != null) {
-      // Exibir a notificação com a hora da próxima refeição
-      const AndroidNotificationDetails androidPlatformChannelSpecifics = AndroidNotificationDetails(
-        'refeicao_channel_id',
-        'Refeição Channel',
-        channelDescription: 'Canal para notificações de refeições',
-        importance: Importance.max,
-        priority: Priority.high,
-        showWhen: false,
-      );
-
-      const NotificationDetails platformChannelSpecifics = NotificationDetails(
-        android: androidPlatformChannelSpecifics,
-      );
-
-      await flutterLocalNotificationsPlugin.show(
-        0,
-        'Hora da Refeição',
-        'Sua próxima refeição é às ${nextRefeicao.hora.hour}:${nextRefeicao.hora.minute}',
-        platformChannelSpecifics,
-      );
-    }
-  }
-
-  Refeicao? _findNextRefeicao(List<Refeicao> refeicoes, DateTime currentTime) {
-    DateTime now = DateTime(currentTime.year, currentTime.month, currentTime.day, currentTime.hour, currentTime.minute);
-
-    Refeicao? nextRefeicao;
-    Duration shortestDuration = Duration(days: 365); // Um valor grande para começar
-
-    for (var refeicao in refeicoes) {
-      DateTime refeicaoDateTime = DateTime(
-        now.year,
-        now.month,
-        now.day,
-        refeicao.hora.hour,
-        refeicao.hora.minute,
-      );
-
-      if (refeicaoDateTime.isAfter(now)) {
-        Duration durationToRefeicao = refeicaoDateTime.difference(now);
-        if (durationToRefeicao < shortestDuration) {
-          shortestDuration = durationToRefeicao;
-          nextRefeicao = refeicao;
-        }
-      }
-    }
-
-    return nextRefeicao;
-  }
-  
   @override
   void initState() {
     super.initState();
     _descricaoController = TextEditingController(text: widget.refeicao?.descricao ?? '');
     if (widget.refeicao != null) {
-      final hora = widget.refeicao!.hora;
+      final hora = widget.refeicao!.hora.toDate(); // Convertendo de Timestamp para DateTime
       _selectedTime = TimeOfDay(hour: hora.hour, minute: hora.minute);
       _refeicao = widget.refeicao;
-    }
-    _fetchAndNotify();
+    } // Recupera o usuário logado
   }
 
   @override
@@ -127,6 +39,7 @@ class _AdicionarRefeicaoScreenState extends State<AdicionarRefeicaoScreen> {
     _descricaoController.dispose();
     super.dispose();
   }
+
 
   Future<void> _selectTime(BuildContext context) async {
     final TimeOfDay? picked = await showTimePicker(
@@ -147,56 +60,49 @@ class _AdicionarRefeicaoScreenState extends State<AdicionarRefeicaoScreen> {
   }
 
   void _saveRefeicao() async {
-    if (_selectedTime != null) {
-      final now = DateTime.now();
-      final DateTime hora = DateTime(
-        now.year,
-        now.month,
-        now.day,
-        _selectedTime!.hour,
-        _selectedTime!.minute,
-      );
+  // Obter o usuário atual da sessão
+  User? _currentUser = SessionManager().currentUser;
 
-      if (_refeicao != null) {
-        // Atualizar refeição existente
-        final refeicaoAtualizada = Refeicao(
-          id: _refeicao!.id,
-          hora: hora,
-          descricao: _descricaoController.text,
-        );
-        await _refeicaoService.atualizarRefeicao(
-          userId: widget.userId,
-          refeicao: refeicaoAtualizada,
-        );
-      } else {
-        // Adicionar nova refeição
-        final novaRefeicao = Refeicao(
-          hora: hora,
-          descricao: _descricaoController.text,
-        );
-        await _refeicaoService.adicionarRefeicao(
-          userId: widget.userId,
-          refeicao: novaRefeicao,
-        );
-      }
+  if (_selectedTime != null && _currentUser != null) {
+    final now = DateTime.now();
+    final DateTime hora = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      _selectedTime!.hour,
+      _selectedTime!.minute,
+    );
 
-      Navigator.pop(context);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Por favor, selecione uma hora')),
-      );
-    }
-  }
+    final refeicaoDocRef = FirebaseFirestore.instance.collection('refeicoes').doc(); // Cria um novo DocumentReference
 
-  void _deleteRefeicao() async {
     if (_refeicao != null) {
-      await _refeicaoService.excluirRefeicao(
-        userId: widget.userId,
-        refeicaoId: _refeicao!.id!,
+      // Atualizar refeição existente
+      final refeicaoAtualizada = Refeicao(
+        id: _refeicao!.id,
+        userRef: _currentUser.uid, // Puxando o uid do usuário da SessionManager
+        descricao: _descricaoController.text,
+        hora: Timestamp.fromDate(hora), // Convertendo DateTime para Timestamp
       );
-      Navigator.pop(context); // Fecha a tela após exclusão
+      await _refeicaoService.atualizarRefeicao(refeicaoAtualizada);
+    } else {
+      // Adicionar nova refeição
+      final novaRefeicao = Refeicao(
+        id: refeicaoDocRef, // ID gerado pelo Firestore
+        userRef: _currentUser.uid, // Referência do usuário atual
+        descricao: _descricaoController.text,
+        hora: Timestamp.fromDate(hora), // Convertendo DateTime para Timestamp
+      );
+      await _refeicaoService.adicionarRefeicao(novaRefeicao);
     }
+
+    Navigator.pop(context);
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Por favor, selecione uma hora ou faça login novamente')),
+    );
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -274,12 +180,15 @@ class _AdicionarRefeicaoScreenState extends State<AdicionarRefeicaoScreen> {
                         context: context,
                         title: 'Excluir refeição',
                         content: 'Você tem certeza que deseja excluir esta refeição?',
-                        onConfirm: _deleteRefeicao,
+                        onConfirm: () async {
+                          await _refeicaoService.deletarRefeicao(_refeicao!.id);
+                          Navigator.pop(context); // Fechar o diálogo ou a tela após a exclusão
+                        },
                       );
                     },
                     child: Text('Excluir'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
+                      backgroundColor: Colors.red, // Cor de fundo vermelha
                       foregroundColor: Color(0xFFFBFAF3),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),

@@ -246,38 +246,3 @@ class StorageService {
   }
 }
 
-class RefeicaoService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
-  Future<void> adicionarRefeicao({
-    required String userId,
-    required Refeicao refeicao,
-  }) async {
-    await _firestore.collection('usuarios').doc(userId).collection('refeicoes').add(refeicao.toFirestore());
-  }
-
-  Future<void> atualizarRefeicao({
-    required String userId,
-    required Refeicao refeicao,
-  }) async {
-    if (refeicao.id != null) {
-      await _firestore.collection('usuarios').doc(userId).collection('refeicoes').doc(refeicao.id).update(refeicao.toFirestore());
-    } else {
-      throw Exception('Refeição sem ID');
-    }
-  }
-
-  Future<void> excluirRefeicao({
-    required String userId,
-    required String refeicaoId,
-  }) async {
-    await _firestore.collection('usuarios').doc(userId).collection('refeicoes').doc(refeicaoId).delete();
-  }
-
-  // Para obter uma lista de refeições
-  Future<List<Refeicao>> getRefeicoes(String userId) async {
-    QuerySnapshot snapshot = await _firestore.collection('usuarios').doc(userId).collection('refeicoes').get();
-    return snapshot.docs.map((doc) => Refeicao.fromFirestore(doc)).toList();
-  }
-}
-

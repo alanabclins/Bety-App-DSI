@@ -5,45 +5,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-
-class Usuario {
-  String id;
-  String nome;
-  String email;
-  String dataNascimento;
-  String tipoDiabetes;
-  String? profileImageUrl;
-
-  Usuario({
-    required this.id,
-    required this.nome,
-    required this.email,
-    required this.dataNascimento,
-    required this.tipoDiabetes,
-    this.profileImageUrl,
-  });
-
-  factory Usuario.fromMap(String id, Map<String, dynamic> data) {
-    return Usuario(
-      id: id,
-      nome: data['nome'] ?? '',
-      email: data['email'] ?? '',
-      dataNascimento: data['dataNascimento'] ?? '',
-      tipoDiabetes: data['tipoDiabetes'] ?? '',
-      profileImageUrl: data['profile_image_url'],
-    );
-  }
-
-  Map<String, dynamic> toMap() {
-    return {
-      'nome': nome,
-      'email': email,
-      'dataNascimento': dataNascimento,
-      'tipoDiabetes': tipoDiabetes,
-      if (profileImageUrl != null) 'profile_image_url': profileImageUrl,
-    };
-  }
-}
+import 'package:bety_sprint1/services/session_service.dart';
 
 class HomeScreen extends StatefulWidget {
   final User user;
@@ -55,42 +17,36 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late Future<Usuario> _userData;
   File? _selectedImage;
 
   @override
   void initState() {
     super.initState();
-    _userData = _getUserData();
-  }
-
-  Future<Usuario> _getUserData() async {
-    final userDoc = await FirebaseFirestore.instance
-        .collection('usuarios')
-        .doc(widget.user.uid)
-        .get();
-
-    final glucoseRecordDoc = await FirebaseFirestore.instance
-        .collection('usuarios')
-        .doc(widget.user.uid)
-        .collection('glucoseRecords')
-        .orderBy('date', descending: true)
-        .limit(1)
-        .get();
-
-    Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
-
-    if (glucoseRecordDoc.docs.isNotEmpty) {
-      userData['glucose'] = glucoseRecordDoc.docs.first.data()['glucose'];
-    } else {
-      userData['glucose'] = null;
-    }
-
-    return Usuario.fromMap(widget.user.uid, userData);
   }
 
   @override
   Widget build(BuildContext context) {
+    // Obter o usuário atual do SessionManager
+    final usuario = SessionManager().currentUser;
+
+    // Se o usuário não estiver logado ou o SessionManager não tiver dados do usuário
+    if (usuario == null) {
+      return Scaffold(
+        appBar: CustomAppBar(
+          mainTitle: 'Home',
+          subtitle: '',
+          showLogoutButton: false,
+          onBackButtonPressed: () {},
+          backgroundColor: Color(0xFF0BAB7C),
+        ),
+        body: Center(child: Text('Nenhum dado encontrado')),
+      );
+    }
+
+    final lastGlucose = usuario.fotoPerfilUrl != null
+        ? 'Última: ${usuario.fotoPerfilUrl} mg/dL'
+        : 'Sem registro de glicose';
+
     return Scaffold(
       appBar: CustomAppBar(
         mainTitle: 'Home',
@@ -99,65 +55,47 @@ class _HomeScreenState extends State<HomeScreen> {
         onBackButtonPressed: () {},
         backgroundColor: Color(0xFF0BAB7C),
       ),
-      body: FutureBuilder<Usuario>(
-        future: _userData,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Erro ao carregar dados'));
-          } else if (!snapshot.hasData) {
-            return Center(child: Text('Nenhum dado encontrado'));
-          }
-
-          final usuario = snapshot.data!;
-          final lastGlucose = usuario.profileImageUrl != null
-              ? 'Última: ${usuario.profileImageUrl} mg/dL'
-              : 'Sem registro de glicose';
-
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'Olá, ${usuario.nome}!',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF0BAB7C),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                _buildFeatureCard(
-                  context,
-                  icon: Icons.notifications,
-                  title: 'Notificações',
-                  subtitle: 'Próxima: Refeição às 12:00 PM',
-                  onTap: () => Navigator.pushNamed(context, '/notificacoes'),
-                ),
-                _buildFeatureCard(
-                  context,
-                  icon: Icons.map,
-                  title: 'Mapa de Pontos de Apoio',
-                  subtitle: '3 pontos próximos',
-                  onTap: () => Navigator.pushNamed(context, '/mapa'),
-                ),
-                _buildFeatureCard(
-                  context,
-                  icon: Icons.health_and_safety,
-                  title: 'Registro de Glicemia',
-                  subtitle: '120 mg/dL',
-                  onTap: () => Navigator.pushNamed(context, '/glicemia'),
-                ),
-                const SizedBox(height: 20),
-                _buildNotesSection(context),
-                const SizedBox(height: 20),
-                _buildAddNoteButton(context),
-              ],
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Olá, ${usuario.nome}!',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF0BAB7C),
+              ),
             ),
-          );
-        },
+            const SizedBox(height: 20),
+            _buildFeatureCard(
+              context,
+              icon: Icons.notifications,
+              title: 'Notificações',
+              subtitle: 'Próxima: Refeição às 12:00 PM',
+              onTap: () => Navigator.pushNamed(context, '/notificacoes'),
+            ),
+            _buildFeatureCard(
+              context,
+              icon: Icons.map,
+              title: 'Mapa de Pontos de Apoio',
+              subtitle: '3 pontos próximos',
+              onTap: () => Navigator.pushNamed(context, '/mapa'),
+            ),
+            _buildFeatureCard(
+              context,
+              icon: Icons.health_and_safety,
+              title: 'Registro de Glicemia',
+              subtitle: lastGlucose,
+              onTap: () => Navigator.pushNamed(context, '/glicemia'),
+            ),
+            const SizedBox(height: 20),
+            _buildNotesSection(context),
+            const SizedBox(height: 20),
+            _buildAddNoteButton(context),
+          ],
+        ),
       ),
     );
   }
