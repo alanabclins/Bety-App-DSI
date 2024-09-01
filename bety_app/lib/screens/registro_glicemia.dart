@@ -18,7 +18,7 @@ class _MedicaoGlicoseScreenState extends State<MedicaoGlicoseScreen> {
 
   final GlicemiaService _glicemiaService = GlicemiaService();
 
-  Future<void> _confirmDeleteRecord(glicemiaRef) async {
+  Future<bool?> _confirmDeleteRecord(dynamic glicemiaRef) async {
     final bool? confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -40,6 +40,8 @@ class _MedicaoGlicoseScreenState extends State<MedicaoGlicoseScreen> {
     if (confirmed == true) {
       await _glicemiaService.deletarGlicemia(glicemiaRef);
     }
+
+    return confirmed;
   }
 
   void _clearSearch() {
@@ -161,8 +163,9 @@ class _MedicaoGlicoseScreenState extends State<MedicaoGlicoseScreen> {
                       return Dismissible(
                         key: Key(glicemia.id!.id),
                         direction: DismissDirection.endToStart,
-                        onDismissed: (direction) {
-                          _confirmDeleteRecord(glicemia.id!);
+                        confirmDismiss: (direction) async {
+                          final bool? confirmed = await _confirmDeleteRecord(glicemia.id!);
+                          return confirmed; // Retorna verdadeiro para realmente deletar, falso para cancelar
                         },
                         background: Container(
                           color: Colors.red,
