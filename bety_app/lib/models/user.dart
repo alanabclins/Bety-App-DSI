@@ -9,7 +9,7 @@ class User {
   final String nome;
   final String tipoDeDiabetes;
   final DateTime dataDeNascimento;
-  final String? fotoPerfilUrl;
+  String? fotoPerfilUrl;
 
   User({
     required this.uid,

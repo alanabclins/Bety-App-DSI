@@ -2,29 +2,22 @@ import 'package:bety_sprint1/screens/altera_dados.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:bety_sprint1/services/session_service.dart';
 import 'package:bety_sprint1/utils/custom_app_bar.dart';
-//import 'package:bety_sprint1/screens/ponte_att_dados.dart';
-import 'package:path/path.dart' as path;
+import 'package:bety_sprint1/models/user.dart';
+import 'package:intl/intl.dart';
 
 class ProfileScreen extends StatefulWidget {
-  final User user;
-  final Map<String, dynamic> userData;
-
-  const ProfileScreen({super.key, required this.user, required this.userData});
+  const ProfileScreen();
 
   @override
   _ProfileScreenState createState() => _ProfileScreenState();
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final ImagePicker _picker = ImagePicker();
 
   Future<void> _updateProfileImage() async {
-    // Exibe um diálogo para o usuário escolher entre a câmera e a galeria
     final ImageSource? source = await showDialog<ImageSource>(
       context: context,
       builder: (BuildContext context) {
@@ -53,25 +46,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       if (pickedFile != null) {
         final File file = File(pickedFile.path);
-        final userId = widget.user.uid;
-        final storageService = StorageService();
+        final user = SessionManager().currentUser;
 
-        // Upload da imagem e obtenção da URL
-        final downloadUrl = await storageService.uploadProfilePicture(file, userId);
+        if (user != null) {
+          final downloadUrl = await UserService().updateProfilePicture(user.uid, file.path);
 
-        if (downloadUrl != null) {
-          // Atualizar a URL no Firestore
-          await _firestore.collection('usuarios').doc(userId).update({
-            'profile_image_url': downloadUrl,
-          });
-          setState(() {
-            widget.userData['profile_image_url'] = downloadUrl;
-          });
-        } else {
-          // Handle upload error
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erro ao fazer upload da imagem')),
-          );
+          if (downloadUrl != null) {
+            setState(() {
+              user.fotoPerfilUrl = downloadUrl;
+            });
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Erro ao fazer upload da imagem')),
+            );
+          }
         }
       }
     }
@@ -79,6 +67,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final user = SessionManager().currentUser;
+
+    if (user == null) {
+      return Center(child: Text('Nenhum usuário encontrado'));
+    }
+
     return Scaffold(
       appBar: CustomAppBar(
         mainTitle: 'Perfil',
@@ -88,103 +82,84 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Navigator.pushNamed(context, '/home');
         },
       ),
-      body: FutureBuilder<DocumentSnapshot>(
-        future: _firestore.collection('usuarios').doc(widget.user.uid).get(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          }
-
-          if (snapshot.hasError) {
-            return Center(child: Text('Erro ao carregar dados'));
-          }
-
-          if (!snapshot.hasData || !snapshot.data!.exists) {
-            return Center(child: Text('Nenhum dado encontrado'));
-          }
-
-          final userData = snapshot.data!.data() as Map<String, dynamic>;
-
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              SizedBox(height: 20),
-              CircleAvatar(
-                radius: 50,
-                backgroundImage: NetworkImage(userData['profile_image_url'] ??
-                    'https://example.com/default.jpg'),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SizedBox(height: 20),
+          CircleAvatar(
+            radius: 50,
+            backgroundImage: NetworkImage(user.fotoPerfilUrl ??
+                'https://example.com/default.jpg'),
+          ),
+          SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: _updateProfileImage,
+            child: Text('Atualizar foto de perfil'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Color(0xFF0BAB7C),
+              foregroundColor: Color(0xFFFBFAF3),
+              padding: EdgeInsets.all(15),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
               ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _updateProfileImage,
-                child: Text('Atualizar foto de perfil'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF0BAB7C),
-                  foregroundColor: Color(0xFFFBFAF3),
-                  padding: EdgeInsets.all(15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+            ),
+          ),
+          SizedBox(height: 20),
+          Text(
+            'Informações pessoais',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 20),
+          Container(
+            padding: EdgeInsets.all(10),
+            margin: EdgeInsets.symmetric(horizontal: 20),
+            decoration: BoxDecoration(
+              color: Color(0xFFC7F4C2),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ProfileDetailRow(
+                  label: 'Seu nome:',
+                  value: user.nome,
                 ),
-              ),
-              SizedBox(height: 20),
-              Text(
-                'Informações pessoais',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 20),
-              Container(
-                padding: EdgeInsets.all(10),
-                margin: EdgeInsets.symmetric(horizontal: 20),
-                decoration: BoxDecoration(
-                  color: Color(0xFFC7F4C2),
-                  borderRadius: BorderRadius.circular(10),
+                ProfileDetailRow(
+                  label: 'Tipo de diabetes:',
+                  value: user.tipoDeDiabetes,
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ProfileDetailRow(
-                      label: 'Seu nome:',
-                      value: userData['nome'] ?? 'Nome não disponível',
-                    ),
-                    ProfileDetailRow(
-                      label: 'Tipo de diabetes:',
-                      value: userData['tipoDiabetes'] ?? 'Tipo não disponível',
-                    ),
-                    ProfileDetailRow(
-                      label: 'Data de nascimento:',
-                      value: userData['dataNascimento'] ?? 'Data não disponível',
-                    ),
-                    ProfileDetailRow(
-                      label: 'Email:',
-                      value: userData['email'] ?? 'Email não disponível',
-                    ),
-                  ],
+                ProfileDetailRow(
+                  label: 'Data de nascimento:',
+                  value: DateFormat('dd/MM/yyyy').format(user.dataDeNascimento),
                 ),
-              ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => DadosCadastraisScreen(user: widget.user, userData: userData),
-                    ),
-                  );
-                },
-                child: Text('Alterar informações'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF0BAB7C),
-                  foregroundColor: Color(0xFFFBFAF3),
-                  padding: EdgeInsets.all(20),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+                ProfileDetailRow(
+                  label: 'Email:',
+                  value: user.email,
                 ),
+              ],
+            ),
+          ),
+          SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => DadosCadastraisScreen(),
+                ),
+              );
+            },
+            child: Text('Alterar informações'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Color(0xFF0BAB7C),
+              foregroundColor: Color(0xFFFBFAF3),
+              padding: EdgeInsets.all(20),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
               ),
-            ],
-          );
-        },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -212,23 +187,5 @@ class ProfileDetailRow extends StatelessWidget {
         ],
       ),
     );
-  }
-}
-
-class StorageService {
-  final FirebaseStorage _storage = FirebaseStorage.instance;
-
-  Future<String?> uploadProfilePicture(File file, String userId) async {
-    try {
-      final fileName = path.basename(file.path);
-      final ref = _storage.ref().child('profile_pictures/$userId/$fileName');
-      final uploadTask = ref.putFile(file);
-      final snapshot = await uploadTask.whenComplete(() => null);
-      final downloadUrl = await snapshot.ref.getDownloadURL();
-      return downloadUrl;
-    } on FirebaseException catch (e) {
-      print('Erro ao fazer upload da imagem: $e');
-      return null;
-    }
   }
 }
