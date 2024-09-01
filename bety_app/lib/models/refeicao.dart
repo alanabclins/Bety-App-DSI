@@ -4,13 +4,13 @@ class Refeicao {
   DocumentReference? id; // Referência ao documento da refeição (opcional)
   DocumentReference userRef; // Referência ao documento do usuário
   String descricao;
-  Timestamp hora;
+  String hora; // Alterado para String
 
   Refeicao({
     this.id, // O id pode ser nulo até ser atribuído
     required this.userRef,
     required this.descricao,
-    required this.hora,
+    required this.hora, // Alterado para String
   });
 
   // Converte um objeto Refeicao para um mapa JSON
@@ -18,7 +18,7 @@ class Refeicao {
     return {
       'userRef': userRef, // Armazena a referência diretamente
       'descricao': descricao,
-      'hora': hora,
+      'hora': hora, // Alterado para String
     };
   }
 
@@ -28,7 +28,7 @@ class Refeicao {
       id: id,
       userRef: json['userRef'] as DocumentReference,
       descricao: json['descricao'],
-      hora: json['hora'],
+      hora: json['hora'] as String, // Alterado para String
     );
   }
 
@@ -39,11 +39,10 @@ class Refeicao {
   }
 }
 
-
 class RefeicaoService {
   final CollectionReference _refeicoesCollection = FirebaseFirestore.instance.collection('refeicoes');
 
-   // Adicionar uma nova refeição
+  // Adicionar uma nova refeição
   Future<Refeicao> adicionarRefeicao(Refeicao refeicao) async {
     // Adiciona o documento e obtém a referência do documento criado
     final docRef = await _refeicoesCollection.add(refeicao.toJson());
@@ -81,5 +80,29 @@ class RefeicaoService {
       throw ArgumentError('A referência do documento não pode ser nula.');
     }
     return refeicaoRef.delete();
+  }
+
+  // Obter a próxima refeição de um usuário
+  Stream<Refeicao?> getNextRefeicao(DocumentReference userRef) {
+    final now = DateTime.now();
+    final currentTime = '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}'; // Formata a hora atual como "HH:mm"
+
+    return _refeicoesCollection
+        .where('userRef', isEqualTo: userRef)
+        .where('hora', isGreaterThanOrEqualTo: currentTime) // Usa o tempo atual completo
+        .orderBy('hora')
+        .limit(1)
+        .snapshots()
+        .map((querySnapshot) {
+          if (querySnapshot.docs.isEmpty) {
+            return null; // Nenhuma refeição futura encontrada
+          }
+          final doc = querySnapshot.docs.first;
+          return Refeicao.fromFirestore(doc);
+        })
+        .handleError((error) {
+          print('Erro no Stream: $error');
+          return null; // Retorna null em caso de erro
+        });
   }
 }

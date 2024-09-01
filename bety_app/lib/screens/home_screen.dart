@@ -1,3 +1,4 @@
+import 'package:bety_sprint1/models/refeicao.dart';
 import 'package:bety_sprint1/utils/custom_app_bar.dart';
 import 'package:bety_sprint1/models/nota.dart';
 import 'package:flutter/material.dart';
@@ -6,6 +7,7 @@ import 'dart:io';
 import 'package:bety_sprint1/services/session_service.dart';
 import 'package:bety_sprint1/models/glicemia.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 
 class HomeScreen extends StatefulWidget {
 
@@ -23,12 +25,31 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   @override
-Widget build(BuildContext context) {
-  // Obter o usuário atual do SessionManager
-  final usuario = SessionManager().currentUser;
+  Widget build(BuildContext context) {
+    // Obter o usuário atual do SessionManager
+    final usuario = SessionManager().currentUser;
 
-  // Se o usuário não estiver logado ou o SessionManager não tiver dados do usuário
-  if (usuario == null) {
+    // Se o usuário não estiver logado ou o SessionManager não tiver dados do usuário
+    if (usuario == null) {
+      return Scaffold(
+        appBar: CustomAppBar(
+          mainTitle: 'Home',
+          subtitle: '',
+          showLogoutButton: false,
+          onBackButtonPressed: () {},
+          backgroundColor: Color(0xFF0BAB7C),
+        ),
+        body: Center(child: Text('Nenhum dado encontrado')),
+      );
+    }
+
+    String formatTimestamp(Timestamp timestamp) {
+      final dateTime = timestamp.toDate();
+      final formatter = DateFormat('HH:mm');
+      return formatter.format(dateTime);
+    }
+
+    // Use um FutureBuilder para lidar com a chamada assíncrona
     return Scaffold(
       appBar: CustomAppBar(
         mainTitle: 'Home',
@@ -37,97 +58,94 @@ Widget build(BuildContext context) {
         onBackButtonPressed: () {},
         backgroundColor: Color(0xFF0BAB7C),
       ),
-      body: Center(child: Text('Nenhum dado encontrado')),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Olá, ${usuario.nome}!',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF0BAB7C),
+              ),
+            ),
+            const SizedBox(height: 20),
+            StreamBuilder<Refeicao?>(
+              stream: RefeicaoService().getNextRefeicao(usuario.uid), // Modifique para retornar um Stream
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return CircularProgressIndicator();
+                } else if (snapshot.hasError) {
+                  return Text('Você pode adicionar uma refeição na tela alterar dados');
+                } else {
+                  final refeicao = snapshot.data;
+                  if (refeicao != null) {
+                    return _buildFeatureCard(
+                      context,
+                      icon: Icons.restaurant,
+                      title: 'Próxima Refeição',
+                      subtitle: '${refeicao.descricao} às ${refeicao.hora}',
+                      onTap: () => Navigator.pushNamed(context, '/perfil'),
+                    );
+                  } else {
+                    return _buildFeatureCard(
+                      context,
+                      icon: Icons.restaurant,
+                      title: 'Próxima Refeição',
+                      subtitle: 'Você pode adicionar uma refeição na tela alterar dados',
+                      onTap: () => Navigator.pushNamed(context, '/perfil'),
+                    );
+                  }
+                }
+              },
+            ),
+            _buildFeatureCard(
+              context,
+              icon: Icons.map,
+              title: 'Mapa de Pontos de Apoio',
+              subtitle: '3 pontos próximos',
+              onTap: () => Navigator.pushNamed(context, '/mapa'),
+            ),
+            StreamBuilder<Glicemia?>(
+              stream: GlicemiaService().getUltimaGlicemia(usuario.uid), // Use o novo método de stream
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return CircularProgressIndicator();
+                } else if (snapshot.hasError) {
+                  return Text('Você pode adicionar uma medição na tela alterar dados');
+                } else {
+                  final glicemia = snapshot.data;
+                  if (glicemia != null) {
+                    return _buildFeatureCard(
+                      context,
+                      icon: Icons.favorite,
+                      title: 'Última Glicemia',
+                      subtitle: '${glicemia.concentracao} mg/dL às ${formatTimestamp(glicemia.dataHora)}',
+                      onTap: () => Navigator.pushNamed(context, '/registroGlicemia'),
+                    );
+                  } else {
+                    return _buildFeatureCard(
+                      context,
+                      icon: Icons.favorite,
+                      title: 'Última Glicemia',
+                      subtitle: 'Nenhuma medição registrada',
+                      onTap: () => Navigator.pushNamed(context, '/registroGlicemia'),
+                    );
+                  }
+                }
+              },
+            ),
+            const SizedBox(height: 20),
+            _buildNotesSection(context),
+            const SizedBox(height: 20),
+            _buildAddNoteButton(context),
+          ],
+        ),
+      ),
     );
   }
-
-  final GlicemiaService glicemiaService = GlicemiaService(); // Instância do serviço de glicemia
-  // Função assíncrona para obter o nível de glicose
-  Future<String> getLastGlucoseLevel() async {
-    try {
-      // Obtém a última glicemia do usuário
-      final glicemiasStream = glicemiaService.getGlicemiasPorUsuario(usuario.uid);
-      final glicemias = await glicemiasStream.first;
-
-      if (glicemias.isNotEmpty) {
-        // Ordena por dataHora decrescente e obtém a mais recente
-        glicemias.sort((a, b) => b.dataHora.compareTo(a.dataHora));
-        final lastGlicemia = glicemias.first;
-
-        return 'Última: ${lastGlicemia.concentracao} mg/dL';
-      } else {
-        return 'Sem registro de glicose';
-      }
-    } catch (e) {
-      print('Erro ao obter glicemia: $e');
-      return 'Erro ao obter glicemia';
-    }
-  }
-
-  // Use um FutureBuilder para lidar com a chamada assíncrona
-  return Scaffold(
-    appBar: CustomAppBar(
-      mainTitle: 'Home',
-      subtitle: '',
-      showLogoutButton: false,
-      onBackButtonPressed: () {},
-      backgroundColor: Color(0xFF0BAB7C),
-    ),
-    body: SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            'Olá, ${usuario.nome}!',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF0BAB7C),
-            ),
-          ),
-          const SizedBox(height: 20),
-          _buildFeatureCard(
-            context,
-            icon: Icons.notifications,
-            title: 'Notificações',
-            subtitle: 'Próxima: Refeição às 12:00 PM',
-            onTap: () => Navigator.pushNamed(context, '/notificacoes'),
-          ),
-          _buildFeatureCard(
-            context,
-            icon: Icons.map,
-            title: 'Mapa de Pontos de Apoio',
-            subtitle: '3 pontos próximos',
-            onTap: () => Navigator.pushNamed(context, '/mapa'),
-          ),
-          FutureBuilder<String>(
-            future: getLastGlucoseLevel(), // Chama a função assíncrona
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return CircularProgressIndicator(); // Exibe um indicador de carregamento enquanto aguarda
-              } else if (snapshot.hasError) {
-                return Text('Erro ao obter glicemia');
-              } else {
-                return _buildFeatureCard(
-                  context,
-                  icon: Icons.health_and_safety,
-                  title: 'Registro de Glicemia',
-                  subtitle: snapshot.data ?? 'Sem registro de glicose',
-                  onTap: () => Navigator.pushNamed(context, '/glicemia'),
-                );
-              }
-            },
-          ),
-          const SizedBox(height: 20),
-          _buildNotesSection(context),
-          const SizedBox(height: 20),
-          _buildAddNoteButton(context),
-        ],
-      ),
-    ),
-  );
-}
 
   Widget _buildFeatureCard(
     BuildContext context, {

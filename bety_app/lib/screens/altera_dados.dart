@@ -240,8 +240,6 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
                     items: [
                       ...refeicoes.map((refeicao) {
                         final hora = refeicao.hora;
-                        final horaDateTime = hora.toDate();
-                        final horaFormatada = DateFormat('HH:mm').format(horaDateTime);
 
                         return Builder(
                           builder: (BuildContext context) {
@@ -263,7 +261,7 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
                                           ),
                                           SizedBox(height: 10.0),
                                           Text(
-                                            horaFormatada,
+                                            hora,
                                             style: TextStyle(fontSize: 18.0, color: Colors.white),
                                           ),
                                         ],

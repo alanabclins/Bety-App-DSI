@@ -48,6 +48,11 @@ class Glicemia {
 class GlicemiaService {
   final CollectionReference _glicemiasCollection = FirebaseFirestore.instance.collection('glicemias');
 
+  // recuperar o DocumentReference de uma glicemia para edição
+  DocumentReference getGlicemiaDocumentReference(String recordId) {
+    return _glicemiasCollection.doc(recordId);
+  }
+
   // Adicionar uma nova glicemia
   Future<Glicemia> adicionarGlicemia(Glicemia glicemia) async {
     // Adiciona o documento e obtém a referência do documento criado
@@ -74,11 +79,16 @@ class GlicemiaService {
   }
 
   // Atualizar uma glicemia existente
-  Future<void> atualizarGlicemia(Glicemia glicemia) {
+  Future<void> atualizarGlicemia(Glicemia glicemia) async {
     if (glicemia.id == null) {
       throw ArgumentError('A glicemia deve ter um id definido para atualização.');
     }
-    return glicemia.id!.update(glicemia.toJson());
+    try {
+      await glicemia.id!.update(glicemia.toJson());
+    } catch (e) {
+      print('Erro ao atualizar glicemia: $e');
+      rethrow;
+    }
   }
 
   // Deletar uma glicemia
@@ -87,5 +97,25 @@ class GlicemiaService {
       throw ArgumentError('A referência do documento não pode ser nula.');
     }
     return glicemiaRef.delete();
+  }
+
+  //função para obter a última glicemia registrada
+  Stream<Glicemia?> getUltimaGlicemia(DocumentReference userRef) {
+    return _glicemiasCollection
+        .where('userRef', isEqualTo: userRef)
+        .orderBy('dataHora', descending: true)
+        .limit(1)
+        .snapshots()
+        .map((snapshot) {
+          if (snapshot.docs.isEmpty) {
+            return null; // Nenhuma glicemia registrada
+          }
+          final doc = snapshot.docs.first;
+          return Glicemia.fromFirestore(doc);
+        })
+        .handleError((error) {
+          print('Erro no Stream: $error');
+          return null; // Retorna null em caso de erro
+        });
   }
 }

@@ -28,10 +28,19 @@ class _AdicionarRefeicaoScreenState extends State<AdicionarRefeicaoScreen> {
     super.initState();
     _descricaoController = TextEditingController(text: widget.refeicao?.descricao ?? '');
     if (widget.refeicao != null) {
-      final hora = widget.refeicao!.hora.toDate(); // Convertendo de Timestamp para DateTime
-      _selectedTime = TimeOfDay(hour: hora.hour, minute: hora.minute);
+      final hora = widget.refeicao!.hora; // Hora como String no formato "HH:mm"
+      final timeOfDay = _convertStringToTimeOfDay(hora);
+      _selectedTime = timeOfDay;
       _refeicao = widget.refeicao;
     } // Recupera o usuário logado
+  }
+
+  // Função para converter uma String "HH:mm" para TimeOfDay
+  TimeOfDay _convertStringToTimeOfDay(String horaString) {
+    final partes = horaString.split(':');
+    final horas = int.parse(partes[0]);
+    final minutos = int.parse(partes[1]);
+    return TimeOfDay(hour: horas, minute: minutos);
   }
 
   @override
@@ -64,14 +73,8 @@ class _AdicionarRefeicaoScreenState extends State<AdicionarRefeicaoScreen> {
   User? _currentUser = SessionManager().currentUser;
 
   if (_selectedTime != null && _currentUser != null) {
-    final now = DateTime.now();
-    final DateTime hora = DateTime(
-      now.year,
-      now.month,
-      now.day,
-      _selectedTime!.hour,
-      _selectedTime!.minute,
-    );
+
+    final horaString = "${_selectedTime!.hour.toString().padLeft(2, '0')}:${_selectedTime!.minute.toString().padLeft(2, '0')}";
 
     final refeicaoDocRef = FirebaseFirestore.instance.collection('refeicoes').doc(); // Cria um novo DocumentReference
 
@@ -81,7 +84,7 @@ class _AdicionarRefeicaoScreenState extends State<AdicionarRefeicaoScreen> {
         id: _refeicao!.id,
         userRef: _currentUser.uid, // Puxando o uid do usuário da SessionManager
         descricao: _descricaoController.text,
-        hora: Timestamp.fromDate(hora), // Convertendo DateTime para Timestamp
+        hora: horaString, // Convertendo DateTime para Timestamp
       );
       await _refeicaoService.atualizarRefeicao(refeicaoAtualizada);
     } else {
@@ -90,7 +93,7 @@ class _AdicionarRefeicaoScreenState extends State<AdicionarRefeicaoScreen> {
         id: refeicaoDocRef, // ID gerado pelo Firestore
         userRef: _currentUser.uid, // Referência do usuário atual
         descricao: _descricaoController.text,
-        hora: Timestamp.fromDate(hora), // Convertendo DateTime para Timestamp
+        hora: horaString, // Convertendo DateTime para Timestamp
       );
       await _refeicaoService.adicionarRefeicao(novaRefeicao);
     }

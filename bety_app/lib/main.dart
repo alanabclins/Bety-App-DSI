@@ -40,7 +40,7 @@ class MyApp extends StatelessWidget {
         '/cadastro': (context) => const CadastroScreen(),
         '/home': (context) => const MainScreen(),
         '/notificacao': (context) => NotificacaoScreen(),
-        //'/registroGlicemia': (context) => MedicaoGlicoseScreen(),
+        '/registroGlicemia': (context) => MedicaoGlicoseScreen(),
         '/recuperar_senha': (context) => RecuperarSenhaScreen(),
         '/perfil': (context) => ProfileScreen(),
       },
@@ -84,7 +84,7 @@ class _MainScreenState extends State<MainScreen> {
     final List<Widget> _pages = [
       HomeScreen(),
       NotificacaoScreen(),
-      //MedicaoGlicoseScreen(),
+      MedicaoGlicoseScreen(),
       ProfileScreen(),
       //MapaScreen(),
     ];
@@ -133,10 +133,10 @@ class _MainScreenState extends State<MainScreen> {
                 icon: Icon(Icons.notifications),
                 label: 'Notificações',
               ),
-            //  BottomNavigationBarItem(
-            //    icon: Icon(Icons.medical_services),
-              //  label: 'Registro',
-             // ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.medical_services),
+               label: 'Registro',
+              ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.person),
                 label: 'Perfil',
