@@ -5,7 +5,6 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:bety_sprint1/models/refeicao.dart';
 import 'package:bety_sprint1/services/session_service.dart';
 import 'package:bety_sprint1/models/user.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AdicionarRefeicaoScreen extends StatefulWidget {
   final Refeicao? refeicao; // Recebe uma refeição para edição
@@ -76,8 +75,6 @@ class _AdicionarRefeicaoScreenState extends State<AdicionarRefeicaoScreen> {
 
     final horaString = "${_selectedTime!.hour.toString().padLeft(2, '0')}:${_selectedTime!.minute.toString().padLeft(2, '0')}";
 
-    final refeicaoDocRef = FirebaseFirestore.instance.collection('refeicoes').doc(); // Cria um novo DocumentReference
-
     if (_refeicao != null) {
       // Atualizar refeição existente
       final refeicaoAtualizada = Refeicao(
@@ -90,7 +87,6 @@ class _AdicionarRefeicaoScreenState extends State<AdicionarRefeicaoScreen> {
     } else {
       // Adicionar nova refeição
       final novaRefeicao = Refeicao(
-        id: refeicaoDocRef, // ID gerado pelo Firestore
         userRef: _currentUser.uid, // Referência do usuário atual
         descricao: _descricaoController.text,
         hora: horaString, // Convertendo DateTime para Timestamp
