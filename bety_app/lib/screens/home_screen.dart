@@ -339,7 +339,7 @@ Widget _buildNotesSection(BuildContext context) {
                             icon: Icon(Icons.edit, color: Colors.white70),
                             onPressed: () {
                               // Passa o DocumentReference ao método de edição, se necessário
-                              _showEditNoteBottomSheet(context, note);
+                              _showNoteBottomSheet(context, nota: note);
                             },
                           ),
                           IconButton(
@@ -396,10 +396,32 @@ Widget _buildNotesSection(BuildContext context) {
     );
   }
 
-  void _showEditNoteBottomSheet(BuildContext context, Nota nota) {
-    final titleController = TextEditingController(text: nota.titulo);
-    final descriptionController = TextEditingController(text: nota.descricao);
-    String? imageUrl = nota.imagemUrl;
+  Widget _buildAddNoteButton(BuildContext context) {
+    return ElevatedButton.icon(
+      onPressed: () {
+        _showNoteBottomSheet(context);
+      },
+      icon: Icon(Icons.add),
+      label: Text('Adicionar Nota'),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Color(0xFF0BAB7C),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.0),
+        ),
+        padding: EdgeInsets.symmetric(vertical: 15),
+        foregroundColor: Color(0xFFFBFAF3),
+        textStyle: TextStyle(
+            color: Color(0xFFFBFAF3),
+            fontSize: 18,
+            fontWeight: FontWeight.bold),
+      ),
+    );
+  }
+
+  void _showNoteBottomSheet(BuildContext context, {Nota? nota}) {
+    final titleController = TextEditingController(text: nota?.titulo ?? '');
+    final descriptionController = TextEditingController(text: nota?.descricao ?? '');
+    String? imageUrl = nota?.imagemUrl;
     File? _selectedImage;
 
     showModalBottomSheet(
@@ -421,7 +443,7 @@ Widget _buildNotesSection(BuildContext context) {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Editar Nota',
+                  nota == null ? 'Adicionar Nova Nota' : 'Editar Nota',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -464,8 +486,12 @@ Widget _buildNotesSection(BuildContext context) {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20.0),
                     ),
-                    padding: EdgeInsets.symmetric(vertical: 15),
-                    textStyle: TextStyle(color: Color(0xFFFBFAF3)),
+                    padding: EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+                    foregroundColor: Color(0xFFFBFAF3),
+                    textStyle: TextStyle(
+                        color: Color(0xFFFBFAF3),
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold),
                   ),
                 ),
                 SizedBox(height: 20),
@@ -481,24 +507,68 @@ Widget _buildNotesSection(BuildContext context) {
                       return;
                     }
 
-                    String? updatedImageUrl = imageUrl;
-                    if (_selectedImage != null) {
-                      updatedImageUrl = await NotaService().atualizarImagemNota(
-                        nota.id!,
-                        _selectedImage!.path,
+                    if (nota != null) {
+                      // Editar nota existente
+                      String? updatedImageUrl = imageUrl;
+                      if (_selectedImage != null) {
+                        updatedImageUrl = await NotaService().atualizarImagemNota(
+                          nota.id!,
+                          _selectedImage!.path,
+                        );
+                      }
+
+                      final updatedNote = Nota(
+                        userRef: SessionManager().currentUser!.uid,
+                        id: nota.id,
+                        titulo: title,
+                        descricao: description,
+                        timestamp: nota.timestamp,
+                        imagemUrl: updatedImageUrl ?? imageUrl,
                       );
+
+                      await NotaService().atualizarNota(updatedNote);
+                    } else {
+                      // Adicionar nova nota
+                      String? imageUrl;
+                      Nota tempNota;
+
+                      if (_selectedImage != null) {
+                        tempNota = Nota(
+                          userRef: SessionManager().currentUser!.uid,
+                          titulo: title,
+                          descricao: description,
+                          timestamp: Timestamp.now(),
+                        );
+
+                        final tempNotaAdded = await NotaService().adicionarNota(tempNota);
+
+                        imageUrl = await NotaService().atualizarImagemNota(
+                          tempNotaAdded.id!,
+                          _selectedImage!.path,
+                        );
+
+                        tempNota = Nota(
+                          userRef: SessionManager().currentUser!.uid,
+                          id: tempNotaAdded.id,
+                          titulo: title,
+                          descricao: description,
+                          timestamp: Timestamp.now(),
+                          imagemUrl: imageUrl,
+                        );
+                        await NotaService().atualizarNota(tempNota);
+                      } else {
+                        final newNote = Nota(
+                          userRef: SessionManager().currentUser!.uid,
+                          id: null,
+                          titulo: title,
+                          descricao: description,
+                          timestamp: Timestamp.now(),
+                          imagemUrl: null,
+                        );
+
+                        await NotaService().adicionarNota(newNote);
+                      }
                     }
-
-                    final updatedNote = Nota(
-                      userRef: SessionManager().currentUser!.uid,
-                      id: nota.id,
-                      titulo: title,
-                      descricao: description,
-                      timestamp: nota.timestamp,
-                      imagemUrl: updatedImageUrl ?? imageUrl,
-                    );
-
-                    await NotaService().atualizarNota(updatedNote);
 
                     Navigator.pop(context);
                   },
@@ -508,10 +578,16 @@ Widget _buildNotesSection(BuildContext context) {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20.0),
                     ),
-                    padding: EdgeInsets.symmetric(vertical: 15),
-                    textStyle: TextStyle(color: Color(0xFFFBFAF3)),
+                    padding: EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+                    foregroundColor: Color(0xFFFBFAF3),
+                    textStyle: TextStyle(
+                      color: Color(0xFFFBFAF3),
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
+                SizedBox(height: 20),
               ],
             ),
           ),
@@ -519,183 +595,4 @@ Widget _buildNotesSection(BuildContext context) {
       },
     );
   }
-
-  Widget _buildAddNoteButton(BuildContext context) {
-    return ElevatedButton.icon(
-      onPressed: () {
-        _showAddNoteBottomSheet(context);
-      },
-      icon: Icon(Icons.add),
-      label: Text('Adicionar Nota'),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Color(0xFF0BAB7C),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20.0),
-        ),
-        padding: EdgeInsets.symmetric(vertical: 15),
-        foregroundColor: Color(0xFFFBFAF3),
-        textStyle: TextStyle(
-            color: Color(0xFFFBFAF3),
-            fontSize: 18,
-            fontWeight: FontWeight.bold),
-      ),
-    );
-  }
-
-  void _showAddNoteBottomSheet(BuildContext context) {
-  final titleController = TextEditingController();
-  final descriptionController = TextEditingController();
-  File? _selectedImage;
-
-  showModalBottomSheet(
-    context: context,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
-    ),
-    isScrollControlled: true,
-    builder: (context) {
-      return Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-          left: 16.0,
-          right: 16.0,
-          top: 16.0,
-        ),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Adicionar Nova Nota',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF0BAB7C),
-                ),
-              ),
-              SizedBox(height: 20),
-              TextField(
-                controller: titleController,
-                decoration: InputDecoration(
-                  labelText: 'Título',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              SizedBox(height: 20),
-              TextField(
-                controller: descriptionController,
-                decoration: InputDecoration(
-                  labelText: 'Descrição',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 3,
-              ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () async {
-                  final pickedFile = await ImagePicker().pickImage(
-                    source: ImageSource.gallery,
-                  );
-
-                  if (pickedFile != null) {
-                    setState(() {
-                      _selectedImage = File(pickedFile.path);
-                    });
-                  }
-                },
-                child: Text('Selecionar Imagem'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF0BAB7C),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20.0),
-                  ),
-                  padding: EdgeInsets.symmetric(vertical: 15, horizontal: 20),
-                  foregroundColor: Color(0xFFFBFAF3),
-                  textStyle: TextStyle(
-                      color: Color(0xFFFBFAF3),
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold),
-                ),
-              ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () async {
-                  final title = titleController.text;
-                  final description = descriptionController.text;
-
-                  if (title.isEmpty || description.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Preencha todos os campos')),
-                    );
-                    return;
-                  }
-
-                  String? imageUrl;
-                  Nota tempNota;
-                  if (_selectedImage != null) {
-                    // Cria uma nota temporária sem ID para upload da imagem
-                    tempNota = Nota(
-                      userRef: SessionManager().currentUser!.uid,
-                      titulo: title,
-                      descricao: description,
-                      timestamp: Timestamp.now(), // Cria o timestamp localmente
-                    );
-
-                    // Adiciona a nota temporária e obtém o ID do documento
-                    final tempNotaAdded = await NotaService().adicionarNota(tempNota);
-
-                    imageUrl = await NotaService().atualizarImagemNota(
-                      tempNotaAdded.id!,
-                      _selectedImage!.path,
-                    );
-
-                    // Atualiza a nota com a URL da imagem
-                    tempNota = Nota(
-                      userRef: SessionManager().currentUser!.uid,
-                      id: tempNotaAdded.id,
-                      titulo: title,
-                      descricao: description,
-                      timestamp: Timestamp.now(),
-                      imagemUrl: imageUrl,
-                    );
-                    await NotaService().atualizarNota(tempNota);
-                  } else {
-                    // Adiciona a nota sem imagem
-                    final newNote = Nota(
-                      userRef: SessionManager().currentUser!.uid,
-                      id: null,
-                      titulo: title,
-                      descricao: description,
-                      timestamp: Timestamp.now(),
-                      imagemUrl: null,
-                    );
-
-                    await NotaService().adicionarNota(newNote);
-                  }
-
-                  Navigator.pop(context);
-                },
-                child: Text('Salvar'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF0BAB7C),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20.0),
-                  ),
-                  padding: EdgeInsets.symmetric(vertical: 15, horizontal: 20),
-                  foregroundColor: Color(0xFFFBFAF3),
-                  textStyle: TextStyle(
-                    color: Color(0xFFFBFAF3),
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              SizedBox(height: 20),
-            ],
-          ),
-        ),
-      );
-    },
-  );
-}
 }
