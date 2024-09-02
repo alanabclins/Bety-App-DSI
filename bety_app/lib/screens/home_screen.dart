@@ -1,12 +1,10 @@
+import 'package:bety_sprint1/main.dart';
 import 'package:bety_sprint1/models/refeicao.dart';
 import 'package:bety_sprint1/utils/custom_app_bar.dart';
 import 'package:bety_sprint1/utils/buildFeatureCard.dart';
 import 'package:bety_sprint1/utils/buildNotesSection.dart';
-import 'package:bety_sprint1/models/nota.dart';
 import 'package:bety_sprint1/utils/showBottomSheet.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'dart:io';
 import 'package:bety_sprint1/services/session_service.dart';
 import 'package:bety_sprint1/models/glicemia.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -87,7 +85,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       icon: Icons.restaurant,
                       title: 'Próxima Refeição',
                       subtitle: '${refeicao.descricao} às ${refeicao.hora}',
-                      onTap: () => Navigator.pushNamed(context, '/perfil'),
+                      onTap: () => NavigationHelper.navigateToPage(context, 3),
                     );
                   } else {
                     return BuildFeatureCard(
@@ -95,7 +93,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       title: 'Próxima Refeição',
                       subtitle:
                           'Você pode adicionar uma refeição na tela alterar dados',
-                      onTap: () => Navigator.pushNamed(context, '/perfil'),
+                      onTap: () => NavigationHelper.navigateToPage(context, 3),
                     );
                   }
                 }
@@ -125,16 +123,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       title: 'Última Glicemia',
                       subtitle:
                           '${glicemia.concentracao} mg/dL às ${formatTimestamp(glicemia.dataHora)}',
-                      onTap: () =>
-                          Navigator.pushNamed(context, '/registroGlicemia'),
+                      onTap: () => NavigationHelper.navigateToPage(context, 2),
                     );
                   } else {
                     return BuildFeatureCard(
                       icon: Icons.favorite,
                       title: 'Última Glicemia',
                       subtitle: 'Nenhuma medição registrada',
-                      onTap: () =>
-                          Navigator.pushNamed(context, '/registroGlicemia'),
+                      onTap: () => NavigationHelper.navigateToPage(context, 2),
                     );
                   }
                 }
