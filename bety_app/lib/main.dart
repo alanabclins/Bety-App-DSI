@@ -8,8 +8,9 @@ import 'screens/cadastro_screen.dart';
 import 'screens/notificacao_screen.dart';
 import 'screens/registro_glicemia.dart';
 import 'screens/mapa-screen.dart';
-import 'screens/tela_Perfil.dart'; 
+import 'screens/tela_Perfil.dart';
 import 'services/session_service.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,6 +27,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      localizationsDelegates: [GlobalMaterialLocalizations.delegate],
+      supportedLocales: [const Locale('pt'), const Locale('br')],
       title: 'Flutter Demo',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
@@ -72,31 +75,27 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
+  dynamic _pageParams;
+
+  final List<Widget Function(dynamic)> _pages = [
+    (params) => HomeScreen(),
+    (params) => NotificacaoScreen(),
+    (params) => MedicaoGlicoseScreen(),
+    (params) => ProfileScreen(),
+    //(params) => MapaScreen(), // Se quiser incluir o mapa
+  ];
+
+  void _updatePage(int index, {dynamic params}) {
+    setState(() {
+      _selectedIndex = index;
+      _pageParams = params;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final user = SessionManager().currentUser;
-
-    if (user == null) {
-      return const Center(child: Text('Usuário não autenticado.'));
-    }
-
-    final List<Widget> _pages = [
-      HomeScreen(),
-      NotificacaoScreen(),
-      MedicaoGlicoseScreen(),
-      ProfileScreen(),
-      //MapaScreen(),
-    ];
-
-    void _onItemTapped(int index) {
-      setState(() {
-        _selectedIndex = index;
-      });
-    }
-
     return Scaffold(
-      body: _pages[_selectedIndex],
+      body: _pages[_selectedIndex](_pageParams),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           color: Color(0xFF0BAB7C),
@@ -120,7 +119,7 @@ class _MainScreenState extends State<MainScreen> {
           child: BottomNavigationBar(
             type: BottomNavigationBarType.fixed,
             currentIndex: _selectedIndex,
-            onTap: _onItemTapped,
+            onTap: (index) => _updatePage(index),
             backgroundColor: const Color(0xFF0BAB7C),
             selectedItemColor: const Color(0xFFFAFAFA),
             unselectedItemColor: Colors.white.withOpacity(0.7),
@@ -135,7 +134,7 @@ class _MainScreenState extends State<MainScreen> {
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.medical_services),
-               label: 'Registro',
+                label: 'Registro',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.person),
@@ -143,12 +142,23 @@ class _MainScreenState extends State<MainScreen> {
               ),
               //BottomNavigationBarItem(
               //  icon: Icon(Icons.map),
-               // label: 'Mapa',
-             // ),
+              // label: 'Mapa',
+              // ),
             ],
           ),
         ),
       ),
     );
+  }
+}
+
+class NavigationHelper {
+  static void navigateToPage(BuildContext context, int index,
+      {dynamic params}) {
+    final _MainScreenState? bottomNavState =
+        context.findAncestorStateOfType<_MainScreenState>();
+    if (bottomNavState != null) {
+      bottomNavState._updatePage(index, params: params);
+    }
   }
 }

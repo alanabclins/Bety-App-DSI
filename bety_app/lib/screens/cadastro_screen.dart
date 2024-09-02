@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../services/session_service.dart';
@@ -13,9 +14,11 @@ class CadastroScreen extends StatefulWidget {
 class _CadastroScreenState extends State<CadastroScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _senhaController = TextEditingController();
-  final TextEditingController _confirmaSenhaController = TextEditingController();
+  final TextEditingController _confirmaSenhaController =
+      TextEditingController();
   final TextEditingController _nomeController = TextEditingController();
-  final TextEditingController _dataNascimentoController = TextEditingController();
+  final TextEditingController _dataNascimentoController =
+      TextEditingController();
   final TextEditingController _tipoDiabetesController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
@@ -29,6 +32,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
       initialDate: DateTime.now(),
       firstDate: DateTime(1904),
       lastDate: DateTime(2101),
+      locale: const Locale('pt', 'BR'),
     );
     if (picked != null) {
       setState(() {
@@ -218,7 +222,29 @@ class _CadastroScreenState extends State<CadastroScreen> {
           },
         ),
       ),
-      readOnly: true,
+      keyboardType: TextInputType.number,
+      inputFormatters: [
+        FilteringTextInputFormatter.digitsOnly,
+        LengthLimitingTextInputFormatter(8), // Limita a entrada a 8 caracteres
+        TextInputFormatter.withFunction((oldValue, newValue) {
+          final text = newValue.text;
+          if (text.length <= 2) return newValue.copyWith(text: text);
+          if (text.length <= 4)
+            return newValue.copyWith(
+              text: '${text.substring(0, 2)}/${text.substring(2)}',
+              selection: TextSelection.fromPosition(
+                TextPosition(offset: text.length + 1),
+              ),
+            );
+          return newValue.copyWith(
+            text:
+                '${text.substring(0, 2)}/${text.substring(2, 4)}/${text.substring(4)}',
+            selection: TextSelection.fromPosition(
+              TextPosition(offset: text.length + 2),
+            ),
+          );
+        }),
+      ],
       validator: (value) {
         if (value == null || value.isEmpty) {
           return 'Por favor, insira a data de nascimento';
@@ -253,43 +279,54 @@ class _CadastroScreenState extends State<CadastroScreen> {
       width: double.infinity,
       height: 50,
       child: ElevatedButton(
-        onPressed: _isLoading ? null : () async {
-          if (_formKey.currentState!.validate()) {
-            setState(() {
-              _isLoading = true;
-            });
+        onPressed: _isLoading
+            ? null
+            : () async {
+                if (_formKey.currentState!.validate()) {
+                  setState(() {
+                    _isLoading = true;
+                  });
 
-            // Utilizando a função signUp do AuthService
-            try {
-              await authService.signUp(
-                email: _emailController.text,
-                password: _senhaController.text,
-                nome: _nomeController.text,
-                tipoDeDiabetes: _tipoDiabetesController.text,
-                dataDeNascimento: DateFormat('dd/MM/yyyy').parse(_dataNascimentoController.text),
-              );
+                  // Utilizando a função signUp do AuthService
+                  try {
+                    await authService.signUp(
+                      email: _emailController.text,
+                      password: _senhaController.text,
+                      nome: _nomeController.text,
+                      tipoDeDiabetes: _tipoDiabetesController.text,
+                      dataDeNascimento: DateFormat('dd/MM/yyyy')
+                          .parse(_dataNascimentoController.text),
+                    );
 
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Cadastro realizado com sucesso')),
-              );
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Cadastro realizado com sucesso')),
+                    );
 
-              // Navegar para outra tela ou realizar alguma ação após o cadastro
-              Navigator.pop(context);
-
-            } catch (e) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Erro ao cadastrar usuário: $e')),
-              );
-            } finally {
-              setState(() {
-                _isLoading = false;
-              });
-            }
-          }
-        },
+                    // Navegar para outra tela ou realizar alguma ação após o cadastro
+                    Navigator.pop(context);
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Erro ao cadastrar usuário: $e')),
+                    );
+                  } finally {
+                    setState(() {
+                      _isLoading = false;
+                    });
+                  }
+                }
+              },
         child: _isLoading
             ? const CircularProgressIndicator()
             : const Text('Cadastrar'),
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.all(15),
+          textStyle: const TextStyle(fontSize: 20),
+          foregroundColor: const Color.fromARGB(255, 199, 244, 194),
+          backgroundColor: const Color.fromARGB(255, 11, 171, 124),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
       ),
     );
   }
