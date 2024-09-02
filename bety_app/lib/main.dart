@@ -8,8 +8,9 @@ import 'screens/cadastro_screen.dart';
 import 'screens/notificacao_screen.dart';
 import 'screens/registro_glicemia.dart';
 import 'screens/mapa-screen.dart';
-import 'screens/tela_Perfil.dart'; 
+import 'screens/tela_Perfil.dart';
 import 'services/session_service.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,6 +27,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      localizationsDelegates: [GlobalMaterialLocalizations.delegate],
+      supportedLocales: [const Locale('pt'), const Locale('br')],
       title: 'Flutter Demo',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
@@ -135,7 +138,7 @@ class _MainScreenState extends State<MainScreen> {
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.medical_services),
-               label: 'Registro',
+                label: 'Registro',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.person),
@@ -143,8 +146,8 @@ class _MainScreenState extends State<MainScreen> {
               ),
               //BottomNavigationBarItem(
               //  icon: Icon(Icons.map),
-               // label: 'Mapa',
-             // ),
+              // label: 'Mapa',
+              // ),
             ],
           ),
         ),

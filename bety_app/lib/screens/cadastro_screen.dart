@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../services/session_service.dart';
@@ -31,6 +32,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
       initialDate: DateTime.now(),
       firstDate: DateTime(1904),
       lastDate: DateTime(2101),
+      locale: const Locale('pt', 'BR'),
     );
     if (picked != null) {
       setState(() {
@@ -220,7 +222,29 @@ class _CadastroScreenState extends State<CadastroScreen> {
           },
         ),
       ),
-      readOnly: true,
+      keyboardType: TextInputType.number,
+      inputFormatters: [
+        FilteringTextInputFormatter.digitsOnly,
+        LengthLimitingTextInputFormatter(8), // Limita a entrada a 8 caracteres
+        TextInputFormatter.withFunction((oldValue, newValue) {
+          final text = newValue.text;
+          if (text.length <= 2) return newValue.copyWith(text: text);
+          if (text.length <= 4)
+            return newValue.copyWith(
+              text: '${text.substring(0, 2)}/${text.substring(2)}',
+              selection: TextSelection.fromPosition(
+                TextPosition(offset: text.length + 1),
+              ),
+            );
+          return newValue.copyWith(
+            text:
+                '${text.substring(0, 2)}/${text.substring(2, 4)}/${text.substring(4)}',
+            selection: TextSelection.fromPosition(
+              TextPosition(offset: text.length + 2),
+            ),
+          );
+        }),
+      ],
       validator: (value) {
         if (value == null || value.isEmpty) {
           return 'Por favor, insira a data de nascimento';
