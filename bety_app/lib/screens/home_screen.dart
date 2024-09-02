@@ -10,7 +10,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 
 class HomeScreen extends StatefulWidget {
-
   const HomeScreen();
 
   @override
@@ -18,7 +17,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-
   @override
   void initState() {
     super.initState();
@@ -36,7 +34,6 @@ class _HomeScreenState extends State<HomeScreen> {
           mainTitle: 'Home',
           subtitle: '',
           showLogoutButton: false,
-          onBackButtonPressed: () {},
           backgroundColor: Color(0xFF0BAB7C),
         ),
         body: Center(child: Text('Nenhum dado encontrado')),
@@ -52,10 +49,9 @@ class _HomeScreenState extends State<HomeScreen> {
     // Use um FutureBuilder para lidar com a chamada assíncrona
     return Scaffold(
       appBar: CustomAppBar(
-        mainTitle: 'Home',
-        subtitle: '',
+        mainTitle: ' ',
+        subtitle: 'Pronto para gerenciar sua saúde?',
         showLogoutButton: false,
-        onBackButtonPressed: () {},
         backgroundColor: Color(0xFF0BAB7C),
       ),
       body: SingleChildScrollView(
@@ -73,12 +69,14 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 20),
             StreamBuilder<Refeicao?>(
-              stream: RefeicaoService().getNextRefeicao(usuario.uid), // Modifique para retornar um Stream
+              stream: RefeicaoService().getNextRefeicao(
+                  usuario.uid), // Modifique para retornar um Stream
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return CircularProgressIndicator();
                 } else if (snapshot.hasError) {
-                  return Text('Você pode adicionar uma refeição na tela alterar dados');
+                  return Text(
+                      'Você pode adicionar uma refeição na tela alterar dados');
                 } else {
                   final refeicao = snapshot.data;
                   if (refeicao != null) {
@@ -94,7 +92,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       context,
                       icon: Icons.restaurant,
                       title: 'Próxima Refeição',
-                      subtitle: 'Você pode adicionar uma refeição na tela alterar dados',
+                      subtitle:
+                          'Você pode adicionar uma refeição na tela alterar dados',
                       onTap: () => Navigator.pushNamed(context, '/perfil'),
                     );
                   }
@@ -109,12 +108,14 @@ class _HomeScreenState extends State<HomeScreen> {
               onTap: () => Navigator.pushNamed(context, '/mapa'),
             ),
             StreamBuilder<Glicemia?>(
-              stream: GlicemiaService().getUltimaGlicemia(usuario.uid), // Use o novo método de stream
+              stream: GlicemiaService().getUltimaGlicemia(
+                  usuario.uid), // Use o novo método de stream
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return CircularProgressIndicator();
                 } else if (snapshot.hasError) {
-                  return Text('Você pode adicionar uma medição na tela alterar dados');
+                  return Text(
+                      'Você pode adicionar uma medição na tela alterar dados');
                 } else {
                   final glicemia = snapshot.data;
                   if (glicemia != null) {
@@ -122,8 +123,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       context,
                       icon: Icons.favorite,
                       title: 'Última Glicemia',
-                      subtitle: '${glicemia.concentracao} mg/dL às ${formatTimestamp(glicemia.dataHora)}',
-                      onTap: () => Navigator.pushNamed(context, '/registroGlicemia'),
+                      subtitle:
+                          '${glicemia.concentracao} mg/dL às ${formatTimestamp(glicemia.dataHora)}',
+                      onTap: () =>
+                          Navigator.pushNamed(context, '/registroGlicemia'),
                     );
                   } else {
                     return _buildFeatureCard(
@@ -131,7 +134,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       icon: Icons.favorite,
                       title: 'Última Glicemia',
                       subtitle: 'Nenhuma medição registrada',
-                      onTap: () => Navigator.pushNamed(context, '/registroGlicemia'),
+                      onTap: () =>
+                          Navigator.pushNamed(context, '/registroGlicemia'),
                     );
                   }
                 }
@@ -216,153 +220,154 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-Widget _buildNotesSection(BuildContext context) {
-  final usuario = SessionManager().currentUser;
-  // Verifica se o usuário está disponível
-  if (usuario == null) {
-    return Center(
-      child: Text(
-        'Usuário não encontrado.',
-        style: TextStyle(fontSize: 16, color: Colors.grey),
-      ),
-    );
-  }
+  Widget _buildNotesSection(BuildContext context) {
+    final usuario = SessionManager().currentUser;
+    // Verifica se o usuário está disponível
+    if (usuario == null) {
+      return Center(
+        child: Text(
+          'Usuário não encontrado.',
+          style: TextStyle(fontSize: 16, color: Colors.grey),
+        ),
+      );
+    }
 
-  return StreamBuilder<List<Nota>>(
-    stream: NotaService().getNotasPorUsuario(usuario.uid),
-    builder: (context, snapshot) {
-      if (!snapshot.hasData || snapshot.data!.isEmpty) {
-        return Center(
-          child: Text(
-            'Sem notas adicionadas.',
-            style: TextStyle(fontSize: 16, color: Colors.grey),
-          ),
-        );
-      }
+    return StreamBuilder<List<Nota>>(
+      stream: NotaService().getNotasPorUsuario(usuario.uid),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return Center(
+            child: Text(
+              'Sem notas adicionadas.',
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+          );
+        }
 
-      final notes = snapshot.data!;
+        final notes = snapshot.data!;
 
-      return SizedBox(
-        height: 225, // Altura do carrossel
-        child: ListView.builder(
-          scrollDirection: Axis.horizontal,
-          itemCount: notes.length,
-          itemBuilder: (context, index) {
-            final note = notes[index];
-            final date = note.timestamp.toDate();
-            final imageUrl = note.imagemUrl;
+        return SizedBox(
+          height: 225, // Altura do carrossel
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: notes.length,
+            itemBuilder: (context, index) {
+              final note = notes[index];
+              final date = note.timestamp.toDate();
+              final imageUrl = note.imagemUrl;
 
-            return Card(
-              margin: EdgeInsets.symmetric(horizontal: 8.0),
-              color: Color(0xFF0BAB7C),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20.0),
-              ),
-              child: Container(
-                width: 370, // Largura de cada card no carrossel
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 30,
-                          backgroundColor: Colors.white,
-                          child: Icon(
-                            Icons.note,
-                            color: Color(0xFF0BAB7C),
-                            size: 30,
-                          ),
-                        ),
-                        SizedBox(width: 20),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                note.titulo,
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              SizedBox(height: 5),
-                              Text(
-                                '${date.day}/${date.month}/${date.year}',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.white70,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 20),
-                    Expanded(
-                      child: Text(
-                        note.descricao,
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.white70,
-                        ),
-                      ),
-                    ),
-                    if (imageUrl != null && imageUrl.isNotEmpty)
-                      Align(
-                        alignment: Alignment.bottomRight,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            _showImageDialog(context, imageUrl);
-                          },
-                          style: ElevatedButton.styleFrom(
+              return Card(
+                margin: EdgeInsets.symmetric(horizontal: 8.0),
+                color: Color(0xFF0BAB7C),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20.0),
+                ),
+                child: Container(
+                  width: 370, // Largura de cada card no carrossel
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 30,
                             backgroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20.0),
+                            child: Icon(
+                              Icons.note,
+                              color: Color(0xFF0BAB7C),
+                              size: 30,
                             ),
                           ),
-                          child: Text(
-                            'Ver Imagem',
-                            style: TextStyle(color: Color(0xFF0BAB7C)),
-                          ),
-                        ),
-                      ),
-                    Align(
-                      alignment: Alignment.bottomRight,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          IconButton(
-                            icon: Icon(Icons.edit, color: Colors.white70),
-                            onPressed: () {
-                              // Passa o DocumentReference ao método de edição, se necessário
-                              _showNoteBottomSheet(context, nota: note);
-                            },
-                          ),
-                          IconButton(
-                            icon: Icon(Icons.delete,
-                                color: const Color.fromARGB(179, 249, 34, 34)),
-                            onPressed: () async {
-                              await NotaService().deletarNota(note.id!);
-                              setState(() {});
-                            },
+                          SizedBox(width: 20),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  note.titulo,
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                SizedBox(height: 5),
+                                Text(
+                                  '${date.day}/${date.month}/${date.year}',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.white70,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
-                    ),
-                  ],
+                      SizedBox(height: 20),
+                      Expanded(
+                        child: Text(
+                          note.descricao,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.white70,
+                          ),
+                        ),
+                      ),
+                      if (imageUrl != null && imageUrl.isNotEmpty)
+                        Align(
+                          alignment: Alignment.bottomRight,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              _showImageDialog(context, imageUrl);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20.0),
+                              ),
+                            ),
+                            child: Text(
+                              'Ver Imagem',
+                              style: TextStyle(color: Color(0xFF0BAB7C)),
+                            ),
+                          ),
+                        ),
+                      Align(
+                        alignment: Alignment.bottomRight,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            IconButton(
+                              icon: Icon(Icons.edit, color: Colors.white70),
+                              onPressed: () {
+                                // Passa o DocumentReference ao método de edição, se necessário
+                                _showNoteBottomSheet(context, nota: note);
+                              },
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.delete,
+                                  color:
+                                      const Color.fromARGB(179, 249, 34, 34)),
+                              onPressed: () async {
+                                await NotaService().deletarNota(note.id!);
+                                setState(() {});
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            );
-          },
-        ),
-      );
-    },
-  );
-}
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
 
   void _showImageDialog(BuildContext context, String imageUrl) {
     showDialog(
@@ -420,7 +425,8 @@ Widget _buildNotesSection(BuildContext context) {
 
   void _showNoteBottomSheet(BuildContext context, {Nota? nota}) {
     final titleController = TextEditingController(text: nota?.titulo ?? '');
-    final descriptionController = TextEditingController(text: nota?.descricao ?? '');
+    final descriptionController =
+        TextEditingController(text: nota?.descricao ?? '');
     String? imageUrl = nota?.imagemUrl;
     File? _selectedImage;
 
@@ -511,7 +517,8 @@ Widget _buildNotesSection(BuildContext context) {
                       // Editar nota existente
                       String? updatedImageUrl = imageUrl;
                       if (_selectedImage != null) {
-                        updatedImageUrl = await NotaService().atualizarImagemNota(
+                        updatedImageUrl =
+                            await NotaService().atualizarImagemNota(
                           nota.id!,
                           _selectedImage!.path,
                         );
@@ -540,7 +547,8 @@ Widget _buildNotesSection(BuildContext context) {
                           timestamp: Timestamp.now(),
                         );
 
-                        final tempNotaAdded = await NotaService().adicionarNota(tempNota);
+                        final tempNotaAdded =
+                            await NotaService().adicionarNota(tempNota);
 
                         imageUrl = await NotaService().atualizarImagemNota(
                           tempNotaAdded.id!,

@@ -26,20 +26,25 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return PreferredSize(
-      preferredSize: Size.fromHeight(kToolbarHeight + 120), // Ajuste conforme necessário
+      preferredSize:
+          Size.fromHeight(kToolbarHeight + 120), // Ajuste conforme necessário
       child: Column(
         children: [
           Container(
+            height: 60,
             color: backgroundColor,
             child: Row(
               children: [
-                Padding(
-                  padding: EdgeInsets.all(8.0), // Ajuste o padding para posicionar o ícone
-                  child: IconButton(
-                    icon: Icon(Icons.arrow_back, color: iconColor),
-                    onPressed: onBackButtonPressed ?? () => Navigator.of(context).pop(),
+                if (onBackButtonPressed != null && mainTitle != ' ')
+                  Padding(
+                    padding: EdgeInsets.all(
+                        8.0), // Ajuste o padding para posicionar o ícone
+                    child: IconButton(
+                      icon: Icon(Icons.arrow_back, color: iconColor),
+                      onPressed: onBackButtonPressed ??
+                          () => Navigator.of(context).pop(),
+                    ),
                   ),
-                ),
                 Expanded(
                   child: Align(
                     alignment: Alignment.centerLeft,
@@ -60,15 +65,16 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                       icon: Icon(Icons.logout, color: iconColor),
                       onPressed: () {
                         CustomAlertDialog.show(
-                          context: context, 
-                          title: 'Logoff', 
-                          content: 'Tem certeza que deseja desconectar do aplicativo?', 
+                          context: context,
+                          title: 'Logoff',
+                          content:
+                              'Tem certeza que deseja desconectar do aplicativo?',
                           onConfirm: () async {
                             await AuthService().deslogar();
                             Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => LoginScreen(),
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => LoginScreen(),
                               ),
                             );
                           },
@@ -116,5 +122,6 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 
   @override
-  Size get preferredSize => Size.fromHeight(kToolbarHeight + 120); // Ajuste conforme necessário
+  Size get preferredSize =>
+      Size.fromHeight(kToolbarHeight + 120); // Ajuste conforme necessário
 }

@@ -13,9 +13,11 @@ class CadastroScreen extends StatefulWidget {
 class _CadastroScreenState extends State<CadastroScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _senhaController = TextEditingController();
-  final TextEditingController _confirmaSenhaController = TextEditingController();
+  final TextEditingController _confirmaSenhaController =
+      TextEditingController();
   final TextEditingController _nomeController = TextEditingController();
-  final TextEditingController _dataNascimentoController = TextEditingController();
+  final TextEditingController _dataNascimentoController =
+      TextEditingController();
   final TextEditingController _tipoDiabetesController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
@@ -253,43 +255,54 @@ class _CadastroScreenState extends State<CadastroScreen> {
       width: double.infinity,
       height: 50,
       child: ElevatedButton(
-        onPressed: _isLoading ? null : () async {
-          if (_formKey.currentState!.validate()) {
-            setState(() {
-              _isLoading = true;
-            });
+        onPressed: _isLoading
+            ? null
+            : () async {
+                if (_formKey.currentState!.validate()) {
+                  setState(() {
+                    _isLoading = true;
+                  });
 
-            // Utilizando a função signUp do AuthService
-            try {
-              await authService.signUp(
-                email: _emailController.text,
-                password: _senhaController.text,
-                nome: _nomeController.text,
-                tipoDeDiabetes: _tipoDiabetesController.text,
-                dataDeNascimento: DateFormat('dd/MM/yyyy').parse(_dataNascimentoController.text),
-              );
+                  // Utilizando a função signUp do AuthService
+                  try {
+                    await authService.signUp(
+                      email: _emailController.text,
+                      password: _senhaController.text,
+                      nome: _nomeController.text,
+                      tipoDeDiabetes: _tipoDiabetesController.text,
+                      dataDeNascimento: DateFormat('dd/MM/yyyy')
+                          .parse(_dataNascimentoController.text),
+                    );
 
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Cadastro realizado com sucesso')),
-              );
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Cadastro realizado com sucesso')),
+                    );
 
-              // Navegar para outra tela ou realizar alguma ação após o cadastro
-              Navigator.pop(context);
-
-            } catch (e) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Erro ao cadastrar usuário: $e')),
-              );
-            } finally {
-              setState(() {
-                _isLoading = false;
-              });
-            }
-          }
-        },
+                    // Navegar para outra tela ou realizar alguma ação após o cadastro
+                    Navigator.pop(context);
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Erro ao cadastrar usuário: $e')),
+                    );
+                  } finally {
+                    setState(() {
+                      _isLoading = false;
+                    });
+                  }
+                }
+              },
         child: _isLoading
             ? const CircularProgressIndicator()
             : const Text('Cadastrar'),
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.all(15),
+          textStyle: const TextStyle(fontSize: 20),
+          foregroundColor: const Color.fromARGB(255, 199, 244, 194),
+          backgroundColor: const Color.fromARGB(255, 11, 171, 124),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
       ),
     );
   }
