@@ -38,12 +38,12 @@ class User {
       'email': email,
       'nome': nome,
       'tipoDeDiabetes': tipoDeDiabetes,
-      'dataDeNascimento': Timestamp.fromDate(dataDeNascimento), // Converte DateTime para Timestamp
+      'dataDeNascimento': Timestamp.fromDate(
+          dataDeNascimento), // Converte DateTime para Timestamp
       'fotoPerfilUrl': fotoPerfilUrl,
     };
   }
 }
-
 
 class UserService {
   final FirebaseStorage _storage = FirebaseStorage.instance;
@@ -68,7 +68,8 @@ class UserService {
   }
 
   // Atualizar a foto de perfil do usuário
-  Future<String?> updateProfilePicture(DocumentReference uid, String filePath) async {
+  Future<String?> updateProfilePicture(
+      DocumentReference uid, String filePath) async {
     try {
       // Upload da imagem para o Firebase Storage
       Reference ref = _storage.ref().child('profilePictures/${uid.id}.jpg');
@@ -82,7 +83,7 @@ class UserService {
       await uid.update({
         'fotoPerfilUrl': downloadUrl,
       });
-      await AuthService().updateUserInSession();
+      await SessionManager().updateUserInSession();
 
       return downloadUrl;
     } catch (e) {
@@ -91,11 +92,11 @@ class UserService {
     }
   }
 
-    Future<void> updateUserData(User user) async {
+  Future<void> updateUserData(User user) async {
     try {
       // Atualiza o documento do usuário com os dados do objeto User
       await user.uid.update(user.toJson());
-      await AuthService().updateUserInSession();
+      await SessionManager().updateUserInSession();
     } catch (e) {
       print('Erro ao atualizar dados do usuário: $e');
     }

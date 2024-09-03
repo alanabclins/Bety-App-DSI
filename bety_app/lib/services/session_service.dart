@@ -17,7 +17,8 @@ class AuthService {
   }) async {
     try {
       // Criação do usuário com Firebase Authentication
-      auth.UserCredential userCredential = await _firebaseAuth.createUserWithEmailAndPassword(
+      auth.UserCredential userCredential =
+          await _firebaseAuth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
@@ -37,7 +38,6 @@ class AuthService {
 
       // Salvar os dados do usuário no Firestore
       await _usuarioService.saveUser(newUser);
-
     } catch (e) {
       print('Erro ao cadastrar usuário: $e');
       // Tratar erros, como exibir uma mensagem de erro ao usuário
@@ -51,7 +51,8 @@ class AuthService {
   }) async {
     try {
       // Autenticar o usuário com email e senha
-      auth.UserCredential userCredential = await _firebaseAuth.signInWithEmailAndPassword(
+      auth.UserCredential userCredential =
+          await _firebaseAuth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
@@ -62,7 +63,6 @@ class AuthService {
       DocumentReference userRef = _firestore.collection('users').doc(uid);
 
       // Buscar os dados do usuário do Firestore
-      
       User? user = await _usuarioService.getUser(userRef);
 
       // Armazenar o usuário na SessionManager
@@ -70,7 +70,7 @@ class AuthService {
         SessionManager().currentUser = user;
         if (user.email != currentEmail) {
           await userRef.update({'email': currentEmail});
-          await updateUserInSession();
+          await SessionManager().updateUserInSession();
         }
       }
 
@@ -82,7 +82,8 @@ class AuthService {
     }
   }
 
-   Future<void> updateEmail(String newEmail) async {
+  // Atualizar o e-mail do usuário
+  Future<void> updateEmail(String newEmail) async {
     try {
       final user = _firebaseAuth.currentUser;
 
@@ -91,8 +92,8 @@ class AuthService {
         await user.verifyBeforeUpdateEmail(newEmail);
 
         // Notificar o usuário para verificar o e-mail e atualizar o e-mail
-        print('E-mail de verificação enviado para $newEmail. Verifique sua caixa de entrada.');
-
+        print(
+            'E-mail de verificação enviado para $newEmail. Verifique sua caixa de entrada.');
       } else {
         throw Exception('Usuário não está autenticado.');
       }
@@ -102,36 +103,16 @@ class AuthService {
     }
   }
 
-    Future<void> updateUserInSession() async {
-    try {
-      final currentUser = _firebaseAuth.currentUser;
-      if (currentUser != null) {
-        // Obter o UID do usuário autenticado
-        String uid = currentUser.uid;
-        DocumentReference userRef = _firestore.collection('users').doc(uid);
-
-        // Buscar os dados do usuário do Firestore
-        User? user = await _usuarioService.getUser(userRef);
-
-        // Atualizar o usuário na SessionManager
-        if (user != null) {
-          SessionManager().currentUser = user;
-        }
-      }
-    } catch (e) {
-      print('Erro ao atualizar usuário na sessão: $e');
-    }
-  }  
-
   // Deslogar o usuário
   Future<void> signOut() async {
     await auth.FirebaseAuth.instance.signOut();
+    SessionManager().clearSession();
   }
 }
 
-
 class SessionManager {
   static final SessionManager _instance = SessionManager._internal();
+  User? _currentUser;
 
   factory SessionManager() {
     return _instance;
@@ -139,11 +120,40 @@ class SessionManager {
 
   SessionManager._internal();
 
-  User? _currentUser;
-
   User? get currentUser => _currentUser;
 
   set currentUser(User? user) {
     _currentUser = user;
+  }
+
+  // Método para verificar e carregar o usuário autenticado
+  Future<void> checkAndLoadUser() async {
+    final authUser = auth.FirebaseAuth.instance.currentUser;
+    if (authUser != null) {
+      final userRef =
+          FirebaseFirestore.instance.collection('users').doc(authUser.uid);
+      User? fetchedUser = await UserService().getUser(userRef);
+      if (fetchedUser != null) {
+        _currentUser = fetchedUser;
+      }
+    }
+  }
+
+  // Atualizar o usuário na sessão
+  Future<void> updateUserInSession() async {
+    final currentUser = auth.FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      final userRef =
+          FirebaseFirestore.instance.collection('users').doc(currentUser.uid);
+      User? user = await UserService().getUser(userRef);
+      if (user != null) {
+        _currentUser = user;
+      }
+    }
+  }
+
+  // Limpar a sessão do usuário
+  void clearSession() {
+    _currentUser = null;
   }
 }
