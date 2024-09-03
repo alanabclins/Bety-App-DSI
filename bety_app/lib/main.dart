@@ -18,6 +18,8 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
+  await SessionManager().checkAndLoadUser();
+
   runApp(const MyApp());
 }
 

@@ -9,7 +9,6 @@ import 'package:bety_sprint1/services/session_service.dart';
 import 'package:bety_sprint1/models/user.dart';
 
 class DadosCadastraisScreen extends StatefulWidget {
-
   DadosCadastraisScreen();
 
   @override
@@ -33,13 +32,14 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
     final currentUser = _sessionManager.currentUser;
     if (currentUser != null) {
       _nomeController = TextEditingController(text: currentUser.nome);
-      _tipoDiabetesController = TextEditingController(text: currentUser.tipoDeDiabetes);
+      _tipoDiabetesController =
+          TextEditingController(text: currentUser.tipoDeDiabetes);
       _dataNascimentoController = TextEditingController(
-        text: DateFormat('dd/MM/yyyy').format(currentUser.dataDeNascimento)
-      );
+          text: DateFormat('dd/MM/yyyy').format(currentUser.dataDeNascimento));
       _emailController = TextEditingController(text: currentUser.email);
 
-      _refeicoesStream = _refeicaoService.getRefeicoesPorUsuario(currentUser.uid);
+      _refeicoesStream =
+          _refeicaoService.getRefeicoesPorUsuario(currentUser.uid);
     } else {
       print('Usuário não está logado.');
     }
@@ -84,13 +84,15 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
         email: currentUser.email,
         nome: _nomeController.text,
         tipoDeDiabetes: _tipoDiabetesController.text,
-        dataDeNascimento: DateFormat('dd/MM/yyyy').parse(_dataNascimentoController.text),
-        fotoPerfilUrl: currentUser.fotoPerfilUrl, // Mantém a foto de perfil existente
+        dataDeNascimento:
+            DateFormat('dd/MM/yyyy').parse(_dataNascimentoController.text),
+        fotoPerfilUrl:
+            currentUser.fotoPerfilUrl, // Mantém a foto de perfil existente
       );
 
       // Atualiza o usuário no Firestore
       await _userService.updateUserData(updatedUser);
-      await _authService.updateUserInSession();
+      await _sessionManager.updateUserInSession();
     } catch (e) {
       print('Erro ao salvar dados: $e');
     }
@@ -251,18 +253,23 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
                                   children: [
                                     Center(
                                       child: Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
                                         children: [
                                           SizedBox(height: 18.0),
                                           Text(
                                             refeicao.descricao,
-                                            style: TextStyle(fontSize: 20.0, color: Colors.white),
+                                            style: TextStyle(
+                                                fontSize: 20.0,
+                                                color: Colors.white),
                                             textAlign: TextAlign.center,
                                           ),
                                           SizedBox(height: 10.0),
                                           Text(
                                             hora,
-                                            style: TextStyle(fontSize: 18.0, color: Colors.white),
+                                            style: TextStyle(
+                                                fontSize: 18.0,
+                                                color: Colors.white),
                                           ),
                                         ],
                                       ),
@@ -271,18 +278,25 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
                                       right: 10,
                                       top: 10,
                                       child: IconButton(
-                                        icon: Icon(Icons.edit, color: Colors.white),
+                                        icon: Icon(Icons.edit,
+                                            color: Colors.white),
                                         onPressed: () {
                                           Navigator.push(
                                             context,
                                             MaterialPageRoute(
-                                              builder: (context) => AdicionarRefeicaoScreen(
+                                              builder: (context) =>
+                                                  AdicionarRefeicaoScreen(
                                                 refeicao: refeicao,
                                               ),
                                             ),
                                           ).then((_) {
                                             setState(() {
-                                              _refeicoesStream = _refeicaoService.getRefeicoesPorUsuario(_sessionManager.currentUser!.uid);
+                                              _refeicoesStream =
+                                                  _refeicaoService
+                                                      .getRefeicoesPorUsuario(
+                                                          _sessionManager
+                                                              .currentUser!
+                                                              .uid);
                                             });
                                           });
                                         },
@@ -302,22 +316,25 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
                             child: Card(
                               color: Color(0xFF0BAB7C),
                               child: InkWell(
-                                onTap: (){
+                                onTap: () {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => AdicionarRefeicaoScreen(), // Substitua por sua tela de destino
+                                      builder: (context) =>
+                                          AdicionarRefeicaoScreen(), // Substitua por sua tela de destino
                                     ),
                                   );
                                 },
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(Icons.add, size: 50.0, color: Colors.white),
+                                    Icon(Icons.add,
+                                        size: 50.0, color: Colors.white),
                                     SizedBox(height: 10.0),
                                     Text(
                                       'Adicionar nova refeição',
-                                      style: TextStyle(fontSize: 18.0, color: Colors.white),
+                                      style: TextStyle(
+                                          fontSize: 18.0, color: Colors.white),
                                     ),
                                   ],
                                 ),
@@ -341,7 +358,8 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
                     CustomAlertDialog.show(
                       context: context,
                       title: 'Salvar alterações',
-                      content: 'Você tem certeza que deseja salvar as alterações?',
+                      content:
+                          'Você tem certeza que deseja salvar as alterações?',
                       onConfirm: () {
                         _handleButtonPress();
                       },
