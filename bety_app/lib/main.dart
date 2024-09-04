@@ -84,7 +84,7 @@ class _MainScreenState extends State<MainScreen> {
     (params) => NotificacaoScreen(),
     (params) => MedicaoGlicoseScreen(),
     (params) => ProfileScreen(),
-    //(params) => MapaScreen(), // Se quiser incluir o mapa
+    (params) => MapaScreen(), // Se quiser incluir o mapa
   ];
 
   void _updatePage(int index, {dynamic params}) {
@@ -142,10 +142,10 @@ class _MainScreenState extends State<MainScreen> {
                 icon: Icon(Icons.person),
                 label: 'Perfil',
               ),
-              //BottomNavigationBarItem(
-              //  icon: Icon(Icons.map),
-              // label: 'Mapa',
-              // ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.map),
+               label: 'Mapa',
+               ),
             ],
           ),
         ),
