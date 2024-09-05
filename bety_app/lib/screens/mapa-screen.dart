@@ -187,58 +187,53 @@ class _MapaScreenState extends State<MapaScreen> {
     }
   }
 
-  void _showSaveLocationSheet() {
-  showModalBottomSheet(
+  void _showSaveLocationDialog() {
+  showDialog(
     context: context,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
-    ),
-    isScrollControlled: true,
     builder: (BuildContext context) {
-      return SingleChildScrollView(
-        child: Container(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('Você deseja salvar a localização?', style: Theme.of(context).textTheme.headlineMedium),
-              TextField(
-                controller: _nicknameController,
-                decoration: InputDecoration(
-                  labelText: 'Digite um apelido para a localização',
-                ),
+      return AlertDialog(
+        title: Text('Você deseja salvar a localização?'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _nicknameController,
+              decoration: InputDecoration(
+                labelText: 'Digite um apelido para a localização',
               ),
-              SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {
-                  String nickname = _nicknameController.text.trim();
-                  if (nickname.isNotEmpty) {
-                    Navigator.pop(context);
-                    _saveLocation(nickname);
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Por favor, insira um apelido.')),
-                    );
-                  }
-                },
-                child: Text('Salvar'),
-              ),
-              SizedBox(height: 8),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                child: Text('Cancelar'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.grey, // Cor para o botão de cancelar
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            child: Text('Cancelar'),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.grey, // Cor para o botão de cancelar
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              String nickname = _nicknameController.text.trim();
+              if (nickname.isNotEmpty) {
+                Navigator.pop(context);
+                _saveLocation(nickname);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Por favor, insira um apelido.')),
+                );
+              }
+            },
+            child: Text('Salvar'),
+          ),
+        ],
       );
     },
   );
+
+  
 }
 
   @override
@@ -368,7 +363,7 @@ class _MapaScreenState extends State<MapaScreen> {
             child: FractionallySizedBox(
               widthFactor: 0.98, // Ajusta a largura para 90% da largura do pai
               child: ElevatedButton(
-                onPressed: _showSaveLocationSheet,
+                onPressed: _showSaveLocationDialog,
                 child: Text('Salvar', style: TextStyle(color: Color(0xFFFBFAF3))), // Cor do texto
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Color(0xFF0BAB7C), // Cor de fundo
