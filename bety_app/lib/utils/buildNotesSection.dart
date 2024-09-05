@@ -46,6 +46,10 @@ class _NotesSectionState extends State<NotesSection> {
               final date = note.timestamp.toDate();
               final imageUrl = note.imagemUrl;
 
+              // Formatação da data para o padrão dd/MM/yyyy
+              final formattedDate =
+                  '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+
               return Card(
                 margin: EdgeInsets.symmetric(horizontal: 8.0),
                 color: Color(0xFF0BAB7C),
@@ -84,7 +88,7 @@ class _NotesSectionState extends State<NotesSection> {
                                 ),
                                 SizedBox(height: 5),
                                 Text(
-                                  '${date.day}/${date.month}/${date.year}',
+                                  formattedDate,
                                   style: TextStyle(
                                     fontSize: 16,
                                     color: Colors.white70,
@@ -139,9 +143,8 @@ class _NotesSectionState extends State<NotesSection> {
                               icon: Icon(Icons.delete,
                                   color:
                                       const Color.fromARGB(179, 249, 34, 34)),
-                              onPressed: () async {
-                                await NotaService().deletarNota(note.id!);
-                                setState(() {});
+                              onPressed: () {
+                                _showDeleteConfirmationDialog(context, note);
                               },
                             ),
                           ],
@@ -178,6 +181,34 @@ class _NotesSectionState extends State<NotesSection> {
               ),
             ],
           ),
+        );
+      },
+    );
+  }
+
+  void _showDeleteConfirmationDialog(BuildContext context, Nota note) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Confirmar Exclusão'),
+          content: Text('Você tem certeza que deseja deletar esta nota?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Fechar o diálogo
+              },
+              child: Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () async {
+                await NotaService().deletarNota(note.id!);
+                Navigator.of(context).pop(); // Fechar o diálogo
+                setState(() {}); // Atualizar a lista de notas
+              },
+              child: Text('Deletar', style: TextStyle(color: Colors.red)),
+            ),
+          ],
         );
       },
     );

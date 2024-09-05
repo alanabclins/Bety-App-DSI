@@ -8,6 +8,7 @@ import 'screens/cadastro_screen.dart';
 import 'screens/notificacao_screen.dart';
 import 'screens/registro_glicemia.dart';
 import 'screens/mapa-screen.dart';
+import 'screens/medicos_screen.dart';
 import 'screens/tela_Perfil.dart';
 import 'services/session_service.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -48,6 +49,7 @@ class MyApp extends StatelessWidget {
         '/registroGlicemia': (context) => MedicaoGlicoseScreen(),
         '/recuperar_senha': (context) => RecuperarSenhaScreen(),
         '/perfil': (context) => ProfileScreen(),
+        '/gerenciamentoMedicos': (context) => GerenciamentoMedicosPage(),
       },
     );
   }
@@ -81,7 +83,7 @@ class _MainScreenState extends State<MainScreen> {
 
   final List<Widget Function(dynamic)> _pages = [
     (params) => HomeScreen(),
-    (params) => NotificacaoScreen(),
+    (params) => GerenciamentoMedicosPage(),
     (params) => MedicaoGlicoseScreen(),
     (params) => ProfileScreen(),
     (params) => MapaScreen(), // Se quiser incluir o mapa
@@ -131,8 +133,8 @@ class _MainScreenState extends State<MainScreen> {
                 label: 'Home',
               ),
               BottomNavigationBarItem(
-                icon: Icon(Icons.notifications),
-                label: 'Notificações',
+                icon: Icon(Icons.medical_information_outlined),
+                label: 'Médicos',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.medical_services),
