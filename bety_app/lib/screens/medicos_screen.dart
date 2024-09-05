@@ -36,9 +36,13 @@ class _GerenciamentoMedicosPageState extends State<GerenciamentoMedicosPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Gerenciamento de Médicos'),
-        backgroundColor: Color(0xFF0BAB7C),
+      appBar: CustomAppBar(
+        mainTitle: 'Gerenciamento de Médicos',
+        subtitle: 'Lembre-se do seu melhor medico',
+        showLogoutButton: false,
+        onBackButtonPressed: () {
+          Navigator.pushNamed(context, '/home');
+        },
       ),
       body: Column(
         children: [
