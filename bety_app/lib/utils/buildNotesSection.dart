@@ -46,6 +46,10 @@ class _NotesSectionState extends State<NotesSection> {
               final date = note.timestamp.toDate();
               final imageUrl = note.imagemUrl;
 
+              // Formatação da data para o padrão dd/MM/yyyy
+              final formattedDate =
+                  '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+
               return Card(
                 margin: EdgeInsets.symmetric(horizontal: 8.0),
                 color: Color(0xFF0BAB7C),
@@ -84,7 +88,7 @@ class _NotesSectionState extends State<NotesSection> {
                                 ),
                                 SizedBox(height: 5),
                                 Text(
-                                  '${date.day}/${date.month}/${date.year}',
+                                  formattedDate,
                                   style: TextStyle(
                                     fontSize: 16,
                                     color: Colors.white70,

@@ -44,163 +44,177 @@ class _GerenciamentoMedicosPageState extends State<GerenciamentoMedicosPage> {
           Navigator.pushNamed(context, '/home');
         },
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: DropdownButtonFormField<String>(
-              decoration: InputDecoration(
-                labelText: 'Filtrar por Especialidade',
-                border: OutlineInputBorder(),
+      body: SingleChildScrollView(
+        // Adicionado para permitir rolagem
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: DropdownButtonFormField<String>(
+                decoration: InputDecoration(
+                  labelText: 'Filtrar por Especialidade',
+                  border: OutlineInputBorder(),
+                ),
+                value: _especialidadeSelecionada,
+                items: MedicoService.especialidades
+                    .map((especialidade) => DropdownMenuItem(
+                          child: Text(especialidade),
+                          value: especialidade,
+                        ))
+                    .toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _especialidadeSelecionada = value;
+                  });
+                },
               ),
-              value: _especialidadeSelecionada,
-              items: MedicoService.especialidades
-                  .map((especialidade) => DropdownMenuItem(
-                        child: Text(especialidade),
-                        value: especialidade,
-                      ))
-                  .toList(),
-              onChanged: (value) {
+            ),
+            TextButton(
+              onPressed: () {
                 setState(() {
-                  _especialidadeSelecionada = value;
+                  _especialidadeSelecionada = null;
                 });
               },
+              child: Text('Limpar Filtro'),
             ),
-          ),
-          Expanded(
-            child: StreamBuilder<List<Medico>>(
-              stream: MedicoService().getMedicos(user.uid,
-                  especialidade: _especialidadeSelecionada),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
-                }
+            SizedBox(
+              height: MediaQuery.of(context).size.height *
+                  0.6, // Ajusta a altura disponível
+              child: StreamBuilder<List<Medico>>(
+                stream: MedicoService().getMedicos(user.uid,
+                    especialidade: _especialidadeSelecionada),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Center(child: CircularProgressIndicator());
+                  }
 
-                if (snapshot.hasError) {
-                  return Center(child: Text('Erro ao carregar médicos.'));
-                }
+                  if (snapshot.hasError) {
+                    return Center(child: Text('Erro ao carregar médicos.'));
+                  }
 
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return Center(child: Text('Nenhum médico encontrado.'));
-                }
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return Center(child: Text('Nenhum médico encontrado.'));
+                  }
 
-                return ListView.builder(
-                  itemCount: snapshot.data!.length,
-                  itemBuilder: (context, index) {
-                    final medico = snapshot.data![index];
+                  return ListView.builder(
+                    itemCount: snapshot.data!.length,
+                    itemBuilder: (context, index) {
+                      final medico = snapshot.data![index];
 
-                    return Dismissible(
-                      key: Key(medico.id?.id ??
-                          ''), // Acessa o ID do DocumentReference como String
-                      direction: DismissDirection.endToStart,
-                      confirmDismiss: (direction) async {
-                        final bool? confirmed =
-                            await _showDeleteDialog(context, medico);
-                        return confirmed ?? false;
-                      },
-                      background: Container(
-                        color: Colors.red,
-                        alignment: Alignment.centerRight,
-                        padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                        child: const Icon(Icons.delete, color: Colors.white),
-                      ),
-                      child: Card(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15.0),
+                      return Dismissible(
+                        key: Key(medico.id?.id ??
+                            ''), // Acessa o ID do DocumentReference como String
+                        direction: DismissDirection.endToStart,
+                        confirmDismiss: (direction) async {
+                          final bool? confirmed =
+                              await _showDeleteDialog(context, medico);
+                          return confirmed ?? false;
+                        },
+                        background: Container(
+                          color: Colors.red,
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                          child: const Icon(Icons.delete, color: Colors.white),
                         ),
-                        margin: const EdgeInsets.all(12.0),
-                        elevation: 5, // Adiciona sombra ao card
-                        color: Color(0xFF0BAB7C), // Cor de fundo do card
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: Colors.white,
-                            radius: 30,
-                            child: Icon(Icons.person,
-                                color: Color(0xFF0BAB7C), size: 30),
+                        child: Card(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15.0),
                           ),
-                          title: Text(
-                            medico.nome,
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18.0,
-                              color: Color(0xFFFAFAFA), // Cor do texto
+                          margin: const EdgeInsets.all(12.0),
+                          elevation: 5, // Adiciona sombra ao card
+                          color: Color(0xFF0BAB7C), // Cor de fundo do card
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: Colors.white,
+                              radius: 30,
+                              child: Icon(Icons.person,
+                                  color: Color(0xFF0BAB7C), size: 30),
                             ),
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              SizedBox(height: 5),
-                              Text(
-                                'Telefone: ${medico.telefone}',
-                                style: TextStyle(
-                                  color: Color(0xFFFAFAFA), // Cor do texto
-                                  fontSize: 14,
-                                ),
+                            title: Text(
+                              medico.nome,
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18.0,
+                                color: Color(0xFFFAFAFA), // Cor do texto
                               ),
-                              SizedBox(height: 5),
-                              Text(
-                                'Especialidades: ${medico.especialidades.join(', ')}',
-                                style: TextStyle(
-                                  color: Color(0xFFFAFAFA), // Cor do texto
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
-                          trailing: IconButton(
-                            icon: Icon(Icons.edit,
-                                color: Color(
-                                    0xFFFAFAFA)), // Cor do ícone de edição
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => CadastroMedicoPage(
-                                    userRef: user.uid,
-                                    medico: medico,
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SizedBox(height: 5),
+                                Text(
+                                  'Telefone: ${medico.telefone}',
+                                  style: TextStyle(
+                                    color: Color(0xFFFAFAFA), // Cor do texto
+                                    fontSize: 14,
                                   ),
                                 ),
-                              );
-                            },
+                                SizedBox(height: 5),
+                                Text(
+                                  'Especialidades: ${medico.especialidades.join(', ')}',
+                                  style: TextStyle(
+                                    color: Color(0xFFFAFAFA), // Cor do texto
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            trailing: IconButton(
+                              icon: Icon(Icons.edit,
+                                  color: Color(
+                                      0xFFFAFAFA)), // Cor do ícone de edição
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => CadastroMedicoPage(
+                                      userRef: user.uid,
+                                      medico: medico,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
                           ),
                         ),
-                      ),
-                    );
-                  },
-                );
-              },
+                      );
+                    },
+                  );
+                },
+              ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: ElevatedButton.icon(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => CadastroMedicoPage(userRef: user.uid),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          CadastroMedicoPage(userRef: user.uid),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.add),
+                label: const Text('Cadastrar Médico'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0BAB7C),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                      vertical: 16.0, horizontal: 32.0),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.0),
                   ),
-                );
-              },
-              icon: const Icon(Icons.add),
-              label: const Text('Cadastrar Médico'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0BAB7C),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                    vertical: 16.0, horizontal: 32.0),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12.0),
-                ),
-                textStyle: const TextStyle(
-                  fontSize: 18.0,
-                  fontWeight: FontWeight.bold,
+                  textStyle: const TextStyle(
+                    fontSize: 18.0,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
