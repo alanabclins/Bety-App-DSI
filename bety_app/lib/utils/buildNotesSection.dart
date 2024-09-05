@@ -139,9 +139,8 @@ class _NotesSectionState extends State<NotesSection> {
                               icon: Icon(Icons.delete,
                                   color:
                                       const Color.fromARGB(179, 249, 34, 34)),
-                              onPressed: () async {
-                                await NotaService().deletarNota(note.id!);
-                                setState(() {});
+                              onPressed: () {
+                                _showDeleteConfirmationDialog(context, note);
                               },
                             ),
                           ],
@@ -178,6 +177,34 @@ class _NotesSectionState extends State<NotesSection> {
               ),
             ],
           ),
+        );
+      },
+    );
+  }
+
+  void _showDeleteConfirmationDialog(BuildContext context, Nota note) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Confirmar Exclusão'),
+          content: Text('Você tem certeza que deseja deletar esta nota?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Fechar o diálogo
+              },
+              child: Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () async {
+                await NotaService().deletarNota(note.id!);
+                Navigator.of(context).pop(); // Fechar o diálogo
+                setState(() {}); // Atualizar a lista de notas
+              },
+              child: Text('Deletar', style: TextStyle(color: Colors.red)),
+            ),
+          ],
         );
       },
     );
