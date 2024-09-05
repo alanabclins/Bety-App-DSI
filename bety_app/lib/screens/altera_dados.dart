@@ -154,6 +154,9 @@ class _DadosCadastraisScreenState extends State<DadosCadastraisScreen> {
         mainTitle: 'Perfil',
         subtitle: 'Modifique suas informações pessoais',
         showLogoutButton: false,
+        onBackButtonPressed: () {
+            Navigator.pushNamed(context, '/perfil');
+          },
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),

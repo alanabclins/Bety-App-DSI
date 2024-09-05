@@ -108,6 +108,30 @@ class AuthService {
     await auth.FirebaseAuth.instance.signOut();
     SessionManager().clearSession();
   }
+
+  // Função de redefinir senha
+  Future<String?> redefinicaoSenha({
+    required String email,
+  }) async {
+    try {
+      await _firebaseAuth.sendPasswordResetEmail(email: email);
+    } on auth.FirebaseAuthException catch (e) {
+      switch (e.code) {
+        case 'user-not-found':
+          return 'Usuário não encontrado';
+        case 'invalid-email':
+          return 'Endereço de e-mail inválido';
+        case 'too-many-requests':
+          return 'Muitas tentativas. Tente novamente mais tarde';
+        default:
+          return 'Erro desconhecido: ${e.message}';
+      }
+    } catch (e) {
+      // Catch any other exceptions
+      return 'Erro inesperado: $e';
+    }
+    return null;
+  }
 }
 
 class SessionManager {

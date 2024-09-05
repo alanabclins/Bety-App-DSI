@@ -1,5 +1,5 @@
 import 'package:bety_sprint1/utils/custom_app_bar.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:bety_sprint1/services/auth_service.dart';
 import 'package:flutter/material.dart';
 
 class RecuperarSenhaScreen extends StatefulWidget {
@@ -58,7 +58,7 @@ class _RecuperarSenhaScreenState extends State<RecuperarSenhaScreen> {
               ElevatedButton(
                 onPressed: () async {
                   if (_formKey.currentState!.validate()) {
-                    await FirebaseAuth.instance.sendPasswordResetEmail(
+                    await AuthService().redefinicaoSenha(
                       email: _emailController.text,
                     );
                     ScaffoldMessenger.of(context).showSnackBar(

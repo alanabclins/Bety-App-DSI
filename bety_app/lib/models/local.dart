@@ -6,6 +6,7 @@ class Local {
   double longitude;
   double latitude;
   String nome;
+  String apelido; // Novo campo
 
   Local({
     this.id, // O id pode ser nulo até ser atribuído
@@ -13,6 +14,7 @@ class Local {
     required this.longitude,
     required this.latitude,
     required this.nome,
+    required this.apelido, // Novo campo
   });
 
   // Converte um objeto Local para um mapa JSON
@@ -22,6 +24,7 @@ class Local {
       'longitude': longitude,
       'latitude': latitude,
       'nome': nome,
+      'apelido': apelido, // Novo campo
     };
   }
 
@@ -33,6 +36,7 @@ class Local {
       longitude: json['longitude'] as double,
       latitude: json['latitude'] as double,
       nome: json['nome'] as String,
+      apelido: json['apelido'] as String, // Novo campo
     );
   }
 
@@ -57,6 +61,7 @@ class LocalService {
       longitude: local.longitude,
       latitude: local.latitude,
       nome: local.nome,
+      apelido: local.apelido, // Novo campo
     );
     // Retorna o objeto Local atualizado com o ID
     return localComId;

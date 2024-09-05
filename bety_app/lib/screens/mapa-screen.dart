@@ -6,6 +6,7 @@ import 'package:bety_sprint1/services/session_service.dart';
 import 'package:bety_sprint1/models/user.dart';
 import 'package:bety_sprint1/models/local.dart';
 import 'package:bety_sprint1/screens/localizacoes_salvas_screen.dart';
+import 'package:bety_sprint1/utils/custom_app_bar.dart';  // Certifique-se de importar o CustomAppBar
 
 class MapaScreen extends StatefulWidget {
   const MapaScreen({Key? key}) : super(key: key);
@@ -19,19 +20,47 @@ class _MapaScreenState extends State<MapaScreen> {
   LatLng? _currentLocation;
   LatLng? _savedLocation;
   final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _nicknameController = TextEditingController();
   String? _savedAddress;
   String? _savedLocationName;
   double? _distanceToSavedLocation;
   User? _currentUser;
-  bool _isEditing = false;
-  
   final LocalService _localService = LocalService();
 
   @override
   void initState() {
     super.initState();
+    _requestLocationPermission();
     _loadUserData();
-    _getLocationStream();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Verifica se a localização atual está disponível e centraliza o mapa
+    if (_currentLocation != null) {
+      _centerMapOnCurrentLocation();
+    }
+  }
+
+  Future<void> _requestLocationPermission() async {
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        // Permissão negada. Mostre um alerta ou faça algo apropriado.
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Permissão de localização foi negada')),
+        );
+        return;
+      }
+    }
+
+    if (permission == LocationPermission.whileInUse || permission == LocationPermission.always) {
+      // Permissão concedida
+      _getLocationStream();
+      _centerMapOnCurrentLocation();
+    }
   }
 
   Future<void> _loadUserData() async {
@@ -124,19 +153,28 @@ class _MapaScreenState extends State<MapaScreen> {
     });
   }
 
-  void _saveLocation() async {
+  void _saveLocation(String nickname) async {
     if (_currentUser != null && _savedLocation != null) {
       final local = Local(
         userRef: _currentUser!.uid,
         latitude: _savedLocation!.latitude,
         longitude: _savedLocation!.longitude,
-        nome: _savedLocationName ?? 'Local salvo',
+        nome: _savedLocationName ?? 'Localização Salva',
+        apelido: nickname,
       );
       await _localService.adicionarLocal(local);
       await SessionManager().updateUserInSession();
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Localização salva com sucesso!')),
+      );
+    }
+  }
+
+  void _centerMapOnSavedLocation() {
+    if (_savedLocation != null) {
+      mapController.animateCamera(
+        CameraUpdate.newLatLng(_savedLocation!),
       );
     }
   }
@@ -149,10 +187,71 @@ class _MapaScreenState extends State<MapaScreen> {
     }
   }
 
+  void _showSaveLocationSheet() {
+  showModalBottomSheet(
+    context: context,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
+    ),
+    isScrollControlled: true,
+    builder: (BuildContext context) {
+      return SingleChildScrollView(
+        child: Container(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Você deseja salvar a localização?', style: Theme.of(context).textTheme.headlineMedium),
+              TextField(
+                controller: _nicknameController,
+                decoration: InputDecoration(
+                  labelText: 'Digite um apelido para a localização',
+                ),
+              ),
+              SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  String nickname = _nicknameController.text.trim();
+                  if (nickname.isNotEmpty) {
+                    Navigator.pop(context);
+                    _saveLocation(nickname);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Por favor, insira um apelido.')),
+                    );
+                  }
+                },
+                child: Text('Salvar'),
+              ),
+              SizedBox(height: 8),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: Text('Cancelar'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.grey, // Cor para o botão de cancelar
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Mapa')),
+      appBar: CustomAppBar(
+        mainTitle: 'Mapa',
+        subtitle: 'Visualize e salve locais',
+        showLogoutButton: false,
+        onBackButtonPressed: () {
+          Navigator.pushNamed(context, '/home');
+        },
+      ),
       body: Column(
         children: [
           Expanded(
@@ -196,24 +295,12 @@ class _MapaScreenState extends State<MapaScreen> {
               decoration: InputDecoration(
                 labelText: 'Digite um endereço',
                 suffixIcon: IconButton(
-                  icon: Icon(_isEditing ? Icons.check : Icons.search),
+                  icon: Icon(Icons.search),  // Mantém sempre o ícone de lupa
                   onPressed: () {
-                    if (_isEditing) {
-                      _saveLocation();
-                      setState(() {
-                        _isEditing = false;
-                      });
-                    } else {
-                      _searchAddress();
-                    }
+                    _searchAddress();  // Chama a função de busca diretamente
                   },
                 ),
               ),
-              onTap: () {
-                setState(() {
-                  _isEditing = true;
-                });
-              },
             ),
           ),
           if (_distanceToSavedLocation != null)
@@ -221,58 +308,75 @@ class _MapaScreenState extends State<MapaScreen> {
               padding: const EdgeInsets.all(8.0),
               child: Text('Distância até o local salvo: ${_distanceToSavedLocation!.toStringAsFixed(2)} km'),
             ),
-          if (_savedLocation != null)
+            if (_savedLocation != null)
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Card(
+                  color: Color(0xFF0BAB7C), // Cor de fundo
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10), // Borda arredondada
+                  ),
+                  child: ListTile(
+                    title: Text(_savedLocationName ?? 'Localização Salva', style: TextStyle(color: Color(0xFFFBFAF3))), // Cor do texto
+                    subtitle: Text('Clique aqui para ver todas suas localizações', style: TextStyle(color: Color(0xFFFBFAF3))), // Cor do texto
+                    trailing: IconButton(
+                      icon: Icon(Icons.my_location, color: Color(0xFFFBFAF3)), // Cor do ícone
+                      onPressed: _centerMapOnSavedLocation, // Centraliza o mapa na localização salva
+                    ),
+                    onTap: () {
+                      if (_currentUser != null) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => LocalizacoesSalvasScreen(),
+                          ),
+                        ).then((result) {
+                          if (result != null) {
+                            LatLng selectedLocation = result['location'];
+                            String selectedName = result['name'];
+                            _updateLocation(selectedLocation); 
+                            _savedLocationName = selectedName;
+                          }
+                        });
+                      }
+                    },
+                  ),
+                ),
+              ),
+
+
             Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Card(
-                child: ListTile(
-                  title: Text(_isEditing ? 'Editando...' : 'Localização Salva'),
-                  subtitle: _isEditing
-                      ? TextField(
-                          controller: _addressController,
-                          onSubmitted: (_) {
-                            _saveLocation();
-                            setState(() {
-                              _isEditing = false;
-                            });
-                          },
-                        )
-                      : Text(_savedAddress ?? 'Endereço não disponível'),
-                  trailing: _isEditing
-                      ? IconButton(
-                          icon: Icon(Icons.check),
-                          onPressed: () {
-                            _saveLocation();
-                            setState(() {
-                              _isEditing = false;
-                            });
-                          },
-                        )
-                      : null,
-                  onTap: () {
-                    if (_currentUser != null) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => LocalizacoesSalvasScreen(),
-                        ),
-                      ).then((selectedLocation) {
-                        if (selectedLocation != null && selectedLocation is LatLng) {
-                          _updateLocation(selectedLocation);
-                        }
-                      });
-                    }
-                  },
+            padding: const EdgeInsets.all(8.0),
+            child: FractionallySizedBox(
+              widthFactor: 0.98, // Ajusta a largura para 90% da largura do pai
+              child: ElevatedButton.icon(
+                icon: Icon(Icons.my_location, color: Color(0xFFFBFAF3)), // Cor do ícone
+                label: Text('Centralizar no Local Atual', style: TextStyle(color: Color(0xFFFBFAF3))), // Cor do texto
+                onPressed: _centerMapOnCurrentLocation,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color(0xFF0BAB7C), // Cor de fundo
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10), // Borda arredondada
+                  ),
                 ),
               ),
             ),
-          // Adicionando um botão para centralizar o mapa na localização atual
+          ),
+
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: ElevatedButton.icon(
-              icon: Icon(Icons.my_location),
-              label: Text('Centralizar no Local Atual'),
-              onPressed: _centerMapOnCurrentLocation,
+            child: FractionallySizedBox(
+              widthFactor: 0.98, // Ajusta a largura para 90% da largura do pai
+              child: ElevatedButton(
+                onPressed: _showSaveLocationSheet,
+                child: Text('Salvar', style: TextStyle(color: Color(0xFFFBFAF3))), // Cor do texto
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color(0xFF0BAB7C), // Cor de fundo
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10), // Borda arredondada
+                  ),
+                ),
+              ),
             ),
           ),
         ],
