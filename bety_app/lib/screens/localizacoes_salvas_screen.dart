@@ -51,16 +51,16 @@ class _LocalizacoesSalvasScreenState extends State<LocalizacoesSalvasScreen> {
   }
 
   void _editLocationName(Local local) async {
-    final TextEditingController _nameController = TextEditingController(text: local.nome);
+    final TextEditingController _nameController = TextEditingController(text: local.apelido);
 
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('Editar Nome do Local'),
+          title: Text('Editar apelido do Local'),
           content: TextField(
             controller: _nameController,
-            decoration: InputDecoration(labelText: 'Nome'),
+            decoration: InputDecoration(labelText: 'Apelido'),
           ),
           actions: <Widget>[
             TextButton(
@@ -76,7 +76,7 @@ class _LocalizacoesSalvasScreenState extends State<LocalizacoesSalvasScreen> {
                   await _localService.atualizarLocal(local);
                   Navigator.of(context).pop();
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Nome do local atualizado com sucesso!')),
+                    SnackBar(content: Text('Apelido do local atualizado')),
                   );
                   setState(() {});
                 }
@@ -88,6 +88,35 @@ class _LocalizacoesSalvasScreenState extends State<LocalizacoesSalvasScreen> {
       },
     );
   }
+
+Future<bool?> _confirmDelete(Local local) async {
+  return showDialog<bool>(
+    context: context,
+    barrierDismissible: false, // O usuário deve clicar em um botão para fechar o diálogo
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: Text('Confirmar Exclusão'),
+        content: Text('Você tem certeza que deseja excluir ${local.nome}?'),
+        actions: <Widget>[
+          TextButton(
+            child: Text('Cancelar'),
+            onPressed: () {
+              Navigator.of(context).pop(false); // Retorna false se o usuário cancelar
+            },
+          ),
+          TextButton(
+            child: Text('Excluir'),
+            onPressed: () async {
+              await _localService.deletarLocal(local.id);
+              Navigator.of(context).pop(true); // Retorna true se o usuário confirmar
+            },
+          ),
+        ],
+      );
+    },
+  );
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -149,50 +178,50 @@ class _LocalizacoesSalvasScreenState extends State<LocalizacoesSalvasScreen> {
               );
 
               return Dismissible(
-              key: Key(local.id!.id), // Use um identificador único para cada local
-              direction: DismissDirection.endToStart, // Permite swipe da direita para esquerda
-              background: Container(
-                color: Colors.red,
-                alignment: Alignment.centerRight,
-                padding: EdgeInsets.symmetric(horizontal: 20),
-                child: Icon(Icons.delete, color: Colors.white),
-              ),
-              onDismissed: (direction) async {
-                await _localService.deletarLocal(local.id); // Chama a função que você me enviou
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('${local.nome} foi deletado.')),
-                );
-                setState(() {}); // Atualiza a tela após a exclusão
-              },
-              child: Card(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15.0),
+                key: Key(local.id!.id), // Use um identificador único para cada local
+                direction: DismissDirection.endToStart, // Permite swipe da direita para esquerda
+                background: Container(
+                  color: Colors.red,
+                  alignment: Alignment.centerRight,
+                  padding: EdgeInsets.symmetric(horizontal: 20),
+                  child: Icon(Icons.delete, color: Colors.white),
                 ),
-                margin: const EdgeInsets.all(12.0),
-                color: const Color(0xFF0BAB7C), // Cor do Card
-                child: ListTile(
-                  title: Text(
-                    local.apelido, // Apelido do local
-                    style: TextStyle(color: Colors.white), // Cor do texto para combinar com o card
+                confirmDismiss: (direction) async {
+                  if (direction == DismissDirection.endToStart) {
+                    // Mostra o diálogo de confirmação
+                    return await _confirmDelete(local);
+                  }
+                  return false;
+                },
+                child: Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15.0),
                   ),
-                  subtitle: Text(
-                    '${local.nome}\nDistância: ${distancia.toStringAsFixed(2)} km', // Nome do local e distância
-                    style: TextStyle(color: Colors.white70), // Cor do subtítulo
+                  margin: const EdgeInsets.all(12.0),
+                  color: const Color(0xFF0BAB7C), // Cor do Card
+                  child: ListTile(
+                    title: Text(
+                      local.apelido, // Apelido do local
+                      style: TextStyle(color: Colors.white), // Cor do texto para combinar com o card
+                    ),
+                    subtitle: Text(
+                      '${local.nome}\nDistância: ${distancia.toStringAsFixed(2)} km', // Nome do local e distância
+                      style: TextStyle(color: Colors.white70), // Cor do subtítulo
+                    ),
+                    trailing: IconButton(
+                      icon: Icon(Icons.edit, color: Colors.white),
+                      onPressed: () => _editLocationName(local), // Abre o campo de texto para editar o nome do local
+                    ),
+                    onTap: () {
+                      // Retorna o local selecionado para a tela anterior
+                      Navigator.pop(context, {
+                        'location': LatLng(local.latitude, local.longitude),
+                        'name': local.nome,
+                      });
+                    },
                   ),
-                  trailing: IconButton(
-                    icon: Icon(Icons.edit, color: Colors.white),
-                    onPressed: () => _editLocationName(local), // Abre o campo de texto para editar o nome do local
-                  ),
-                  onTap: () {
-                    // Retorna o local selecionado para a tela anterior
-                    Navigator.pop(context, {
-                      'location': LatLng(local.latitude, local.longitude),
-                      'name': local.nome,
-                    });
-                  },
                 ),
-              ),
-            );
+              );
             },
           );
         },

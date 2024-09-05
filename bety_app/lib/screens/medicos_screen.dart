@@ -1,10 +1,8 @@
 import 'package:bety_sprint1/utils/custom_app_bar.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bety_sprint1/models/medico.dart';
 import 'package:bety_sprint1/screens/adicionar_medico_screen.dart';
 import 'package:bety_sprint1/services/session_service.dart';
-import 'package:intl/intl.dart'; // para formatar datas
 
 class GerenciamentoMedicosPage extends StatefulWidget {
   @override

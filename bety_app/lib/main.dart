@@ -50,6 +50,7 @@ class MyApp extends StatelessWidget {
         '/recuperar_senha': (context) => RecuperarSenhaScreen(),
         '/perfil': (context) => ProfileScreen(),
         '/gerenciamentoMedicos': (context) => GerenciamentoMedicosPage(),
+        '/mapa': (context) => MapaScreen(),
       },
     );
   }

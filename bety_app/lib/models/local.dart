@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:geolocator/geolocator.dart';
 
 class Local {
   DocumentReference? id; // Referência ao documento do local (opcional)
@@ -90,5 +91,39 @@ class LocalService {
       throw ArgumentError('A referência do documento não pode ser nula.');
     }
     return localRef.delete();
+  }
+
+   // Obtém a localização mais próxima ao usuário
+  Future<Local?> obterLocalMaisProximo() async {
+    // Obtém a localização atual do usuário
+    Position currentPosition = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
+
+    // Obtém todos os locais armazenados
+    QuerySnapshot locaisSnapshot = await _locaisCollection.get();
+    List<Local> locais = locaisSnapshot.docs
+        .map((doc) => Local.fromFirestore(doc))
+        .toList();
+
+    // Calcula a distância entre o usuário e cada local
+    Local? localMaisProximo;
+    double? menorDistancia;
+
+    for (Local local in locais) {
+      double distance = Geolocator.distanceBetween(
+        currentPosition.latitude,
+        currentPosition.longitude,
+        local.latitude,
+        local.longitude,
+      );
+
+      if (menorDistancia == null || distance < menorDistancia) {
+        menorDistancia = distance;
+        localMaisProximo = local;
+      }
+    }
+
+    return localMaisProximo;
   }
 }

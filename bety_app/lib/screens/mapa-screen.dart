@@ -9,7 +9,7 @@ import 'package:bety_sprint1/screens/localizacoes_salvas_screen.dart';
 import 'package:bety_sprint1/utils/custom_app_bar.dart';  // Certifique-se de importar o CustomAppBar
 
 class MapaScreen extends StatefulWidget {
-  const MapaScreen({Key? key}) : super(key: key);
+  const MapaScreen();
 
   @override
   _MapaScreenState createState() => _MapaScreenState();

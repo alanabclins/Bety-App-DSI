@@ -1,5 +1,6 @@
 import 'package:bety_sprint1/main.dart';
 import 'package:bety_sprint1/models/refeicao.dart';
+import 'package:bety_sprint1/models/local.dart';
 import 'package:bety_sprint1/utils/custom_app_bar.dart';
 import 'package:bety_sprint1/utils/buildFeatureCard.dart';
 import 'package:bety_sprint1/utils/buildNotesSection.dart';
@@ -99,12 +100,53 @@ class _HomeScreenState extends State<HomeScreen> {
                 }
               },
             ),
-            _buildFeatureCard(
-              context,
-              icon: Icons.map,
-              title: 'Mapa de Pontos de Apoio',
-              subtitle: '3 pontos próximos',
-              onTap: () => Navigator.pushNamed(context, '/mapa'),
+            StreamBuilder<List<Local>>(
+              stream: LocalService().getLocaisPorUsuario(usuario.uid), // Retorna um Stream de uma lista de locais
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return CircularProgressIndicator();
+                } else if (snapshot.hasError) {
+                  return Text('Erro ao carregar os pontos de apoio');
+                } else {
+                  final locais = snapshot.data;
+                  if (locais != null && locais.isNotEmpty) {
+                    return FutureBuilder<Local?>(
+                      future: LocalService().obterLocalMaisProximo(), // Obtém o local mais próximo
+                      builder: (context, futureSnapshot) {
+                        if (futureSnapshot.connectionState == ConnectionState.waiting) {
+                          return CircularProgressIndicator();
+                        } else if (futureSnapshot.hasError) {
+                          return Text('Erro ao encontrar o local mais próximo');
+                        } else {
+                          final localMaisProximo = futureSnapshot.data;
+                          if (localMaisProximo != null) {
+                            return BuildFeatureCard(
+                              icon: Icons.map,
+                              title: 'Mapa de Pontos de Apoio',
+                              subtitle: 'Ponto mais próximo: ${localMaisProximo.apelido}',
+                              onTap: () => NavigationHelper.navigateToPage(context, 4),
+                            );
+                          } else {
+                            return BuildFeatureCard(
+                              icon: Icons.map,
+                              title: 'Mapa de Pontos de Apoio',
+                              subtitle: 'Você pode adicionar locais na tela alterar dados',
+                              onTap: () => NavigationHelper.navigateToPage(context, 4),
+                            );
+                          }
+                        }
+                      },
+                    );
+                  } else {
+                    return BuildFeatureCard(
+                      icon: Icons.map,
+                      title: 'Mapa de Pontos de Apoio',
+                      subtitle: 'Você pode adicionar locais na tela alterar dados',
+                      onTap: () => NavigationHelper.navigateToPage(context, 4),
+                    );
+                  }
+                }
+              },
             ),
             StreamBuilder<Glicemia?>(
               stream: GlicemiaService().getUltimaGlicemia(
