@@ -1,24 +1,24 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Refeicao {
-  DocumentReference? id; // Referência ao documento da refeição (opcional)
-  DocumentReference userRef; // Referência ao documento do usuário
+  DocumentReference? id;
+  DocumentReference userRef;
   String descricao;
-  String hora; // Alterado para String
+  String hora;
 
   Refeicao({
-    this.id, // O id pode ser nulo até ser atribuído
+    this.id,
     required this.userRef,
     required this.descricao,
-    required this.hora, // Alterado para String
+    required this.hora,
   });
 
   // Converte um objeto Refeicao para um mapa JSON
   Map<String, dynamic> toJson() {
     return {
-      'userRef': userRef, // Armazena a referência diretamente
+      'userRef': userRef,
       'descricao': descricao,
-      'hora': hora, // Alterado para String
+      'hora': hora,
     };
   }
 
@@ -28,7 +28,7 @@ class Refeicao {
       id: id,
       userRef: json['userRef'] as DocumentReference,
       descricao: json['descricao'],
-      hora: json['hora'] as String, // Alterado para String
+      hora: json['hora'] as String,
     );
   }
 
@@ -44,23 +44,20 @@ class RefeicaoService {
 
   // Adicionar uma nova refeição
   Future<Refeicao> adicionarRefeicao(Refeicao refeicao) async {
-    // Adiciona o documento e obtém a referência do documento criado
     final docRef = await _refeicoesCollection.add(refeicao.toJson());
-    // Atualiza o objeto Refeicao com o ID do documento
     final refeicaoComId = Refeicao(
       id: docRef,
       userRef: refeicao.userRef,
       descricao: refeicao.descricao,
       hora: refeicao.hora,
     );
-    // Retorna o objeto Refeicao atualizado com o ID
     return refeicaoComId;
   }
 
   // Obter todas as refeições de um usuário específico
   Stream<List<Refeicao>> getRefeicoesPorUsuario(DocumentReference userRef) {
     return _refeicoesCollection
-        .where('userRef', isEqualTo: userRef) // Usa a referência diretamente
+        .where('userRef', isEqualTo: userRef)
         .snapshots()
         .map((snapshot) =>
             snapshot.docs.map((doc) => Refeicao.fromFirestore(doc)).toList());
@@ -85,24 +82,24 @@ class RefeicaoService {
   // Obter a próxima refeição de um usuário
   Stream<Refeicao?> getNextRefeicao(DocumentReference userRef) {
     final now = DateTime.now();
-    final currentTime = '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}'; // Formata a hora atual como "HH:mm"
+    final currentTime = '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
 
     return _refeicoesCollection
         .where('userRef', isEqualTo: userRef)
-        .where('hora', isGreaterThanOrEqualTo: currentTime) // Usa o tempo atual completo
+        .where('hora', isGreaterThanOrEqualTo: currentTime)
         .orderBy('hora')
         .limit(1)
         .snapshots()
         .map((querySnapshot) {
           if (querySnapshot.docs.isEmpty) {
-            return null; // Nenhuma refeição futura encontrada
+            return null; 
           }
           final doc = querySnapshot.docs.first;
           return Refeicao.fromFirestore(doc);
         })
         .handleError((error) {
           print('Erro no Stream: $error');
-          return null; // Retorna null em caso de erro
+          return null;
         });
   }
 }
