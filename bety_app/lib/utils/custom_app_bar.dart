@@ -1,7 +1,7 @@
 // custom_app_bar.dart
 import 'package:bety_sprint1/screens/login_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:bety_sprint1/services/auth_service.dart';
+import 'package:bety_sprint1/services/session_service.dart';
 import 'package:bety_sprint1/utils/alert_dialog.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -70,7 +70,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                           content:
                               'Tem certeza que deseja desconectar do aplicativo?',
                           onConfirm: () async {
-                            await AuthService().deslogar();
+                            await AuthService().signOut();
                             Navigator.pushReplacement(
                               context,
                               MaterialPageRoute(

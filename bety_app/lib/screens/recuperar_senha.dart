@@ -1,5 +1,5 @@
 import 'package:bety_sprint1/utils/custom_app_bar.dart';
-import 'package:bety_sprint1/services/auth_service.dart';
+import 'package:bety_sprint1/services/session_service.dart';
 import 'package:flutter/material.dart';
 
 class RecuperarSenhaScreen extends StatefulWidget {

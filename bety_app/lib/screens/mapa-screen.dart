@@ -37,7 +37,6 @@ class _MapaScreenState extends State<MapaScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Verifica se a localização atual está disponível e centraliza o mapa
     if (_currentLocation != null) {
       _centerMapOnCurrentLocation();
     }

@@ -111,7 +111,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   final locais = snapshot.data;
                   if (locais != null && locais.isNotEmpty) {
                     return FutureBuilder<Local?>(
-                      future: LocalService().obterLocalMaisProximo(), // Obtém o local mais próximo
+                      future: LocalService().obterLocalMaisProximo(usuario.uid), // Obtém o local mais próximo
                       builder: (context, futureSnapshot) {
                         if (futureSnapshot.connectionState == ConnectionState.waiting) {
                           return CircularProgressIndicator();

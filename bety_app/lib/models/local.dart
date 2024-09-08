@@ -93,20 +93,20 @@ class LocalService {
     return localRef.delete();
   }
 
-   // Obtém a localização mais próxima ao usuário
-  Future<Local?> obterLocalMaisProximo() async {
-    // Obtém a localização atual do usuário
+  // Obtém a localização mais próxima ao usuário
+  Future<Local?> obterLocalMaisProximo(DocumentReference userRef) async {
     Position currentPosition = await Geolocator.getCurrentPosition(
       desiredAccuracy: LocationAccuracy.high,
     );
 
-    // Obtém todos os locais armazenados
-    QuerySnapshot locaisSnapshot = await _locaisCollection.get();
+    QuerySnapshot locaisSnapshot = await _locaisCollection
+        .where('userRef', isEqualTo: userRef)
+        .get();
+
     List<Local> locais = locaisSnapshot.docs
         .map((doc) => Local.fromFirestore(doc))
         .toList();
 
-    // Calcula a distância entre o usuário e cada local
     Local? localMaisProximo;
     double? menorDistancia;
 

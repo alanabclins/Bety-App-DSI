@@ -12,7 +12,7 @@
 
 
     <application
-        android:label="Bety v1"
+        android:label="Bety v2"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
 
