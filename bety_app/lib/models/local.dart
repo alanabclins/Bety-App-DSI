@@ -2,30 +2,30 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geolocator/geolocator.dart';
 
 class Local {
-  DocumentReference? id; // Referência ao documento do local (opcional)
-  DocumentReference userRef; // Referência ao documento do usuário
+  DocumentReference? id;
+  DocumentReference userRef;
   double longitude;
   double latitude;
   String nome;
-  String apelido; // Novo campo
+  String apelido;
 
   Local({
-    this.id, // O id pode ser nulo até ser atribuído
+    this.id,
     required this.userRef,
     required this.longitude,
     required this.latitude,
     required this.nome,
-    required this.apelido, // Novo campo
+    required this.apelido, 
   });
 
   // Converte um objeto Local para um mapa JSON
   Map<String, dynamic> toJson() {
     return {
-      'userRef': userRef, // Armazena a referência diretamente
+      'userRef': userRef,
       'longitude': longitude,
       'latitude': latitude,
       'nome': nome,
-      'apelido': apelido, // Novo campo
+      'apelido': apelido,
     };
   }
 
@@ -37,7 +37,7 @@ class Local {
       longitude: json['longitude'] as double,
       latitude: json['latitude'] as double,
       nome: json['nome'] as String,
-      apelido: json['apelido'] as String, // Novo campo
+      apelido: json['apelido'] as String,
     );
   }
 
@@ -53,25 +53,22 @@ class LocalService {
 
   // Adicionar um novo local
   Future<Local> adicionarLocal(Local local) async {
-    // Adiciona o documento e obtém a referência do documento criado
     final docRef = await _locaisCollection.add(local.toJson());
-    // Atualiza o objeto Local com o ID do documento
     final localComId = Local(
       id: docRef,
       userRef: local.userRef,
       longitude: local.longitude,
       latitude: local.latitude,
       nome: local.nome,
-      apelido: local.apelido, // Novo campo
+      apelido: local.apelido,
     );
-    // Retorna o objeto Local atualizado com o ID
     return localComId;
   }
 
   // Obter todos os locais de um usuário específico
   Stream<List<Local>> getLocaisPorUsuario(DocumentReference userRef) {
     return _locaisCollection
-        .where('userRef', isEqualTo: userRef) // Usa a referência diretamente
+        .where('userRef', isEqualTo: userRef)
         .snapshots()
         .map((snapshot) =>
             snapshot.docs.map((doc) => Local.fromFirestore(doc)).toList());

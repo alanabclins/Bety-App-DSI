@@ -3,15 +3,14 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:io';
 
 class Nota {
-  DocumentReference? id; // Referência ao documento da nota (opcional)
-  DocumentReference userRef; // Referência ao documento do usuário
+  DocumentReference? id;
+  DocumentReference userRef;
   String titulo;
   String descricao;
   Timestamp timestamp;
-  String? imagemUrl; // URL da imagem opcional
-
+  String? imagemUrl;
   Nota({
-    this.id, // O id pode ser nulo até ser atribuído
+    this.id,
     required this.userRef,
     required this.titulo,
     required this.descricao,
@@ -22,7 +21,7 @@ class Nota {
   // Converte um objeto Nota para um mapa JSON
   Map<String, dynamic> toJson() {
     return {
-      'userRef': userRef, // Armazena a referência do usuário
+      'userRef': userRef,
       'titulo': titulo,
       'descricao': descricao,
       'timestamp': timestamp,
@@ -71,7 +70,7 @@ class NotaService {
   // Obter todas as notas de um usuário específico
   Stream<List<Nota>> getNotasPorUsuario(DocumentReference userRef) {
     return _notasCollection
-        .where('userRef', isEqualTo: userRef) // Usa a referência diretamente
+        .where('userRef', isEqualTo: userRef)
         .snapshots()
         .map((snapshot) =>
             snapshot.docs.map((doc) => Nota.fromFirestore(doc)).toList());

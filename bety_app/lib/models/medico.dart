@@ -2,14 +2,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 // Classe Medico
 class Medico {
-  DocumentReference? id; // Referência ao documento do médico (opcional)
-  DocumentReference userRef; // Referência ao documento do usuário
+  DocumentReference? id;
+  DocumentReference userRef;
   String nome;
   String telefone;
   List<String> especialidades;
 
   Medico({
-    this.id, // O id pode ser nulo até ser atribuído
+    this.id,
     required this.userRef,
     required this.nome,
     required this.telefone,
@@ -19,7 +19,7 @@ class Medico {
   // Converte um objeto Medico para um mapa JSON
   Map<String, dynamic> toJson() {
     return {
-      'userRef': userRef, // Armazena a referência diretamente
+      'userRef': userRef,
       'nome': nome,
       'telefone': telefone,
       'especialidades': especialidades,
@@ -125,9 +125,7 @@ class MedicoService {
 
   // Adicionar um novo médico
   Future<Medico> adicionarMedico(Medico medico) async {
-    // Adiciona o documento e obtém a referência do documento criado
     final docRef = await _medicosCollection.add(medico.toJson());
-    // Atualiza o objeto Medico com o ID do documento
     final medicoComId = Medico(
       id: docRef,
       userRef: medico.userRef,
@@ -135,7 +133,6 @@ class MedicoService {
       telefone: medico.telefone,
       especialidades: medico.especialidades,
     );
-    // Retorna o objeto Medico atualizado com o ID
     return medicoComId;
   }
 

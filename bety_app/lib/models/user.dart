@@ -39,7 +39,7 @@ class User {
       'nome': nome,
       'tipoDeDiabetes': tipoDeDiabetes,
       'dataDeNascimento': Timestamp.fromDate(
-          dataDeNascimento), // Converte DateTime para Timestamp
+          dataDeNascimento),
       'fotoPerfilUrl': fotoPerfilUrl,
     };
   }
@@ -58,7 +58,6 @@ class UserService {
     try {
       DocumentSnapshot doc = await uid.get();
       if (doc.exists) {
-        // Converte o Map<String, dynamic> para um objeto User usando fromJson
         return User.fromJson(uid, doc.data() as Map<String, dynamic>);
       }
     } catch (e) {
@@ -71,12 +70,10 @@ class UserService {
   Future<String?> updateProfilePicture(
       DocumentReference uid, String filePath) async {
     try {
-      // Upload da imagem para o Firebase Storage
       Reference ref = _storage.ref().child('profilePictures/${uid.id}.jpg');
       UploadTask uploadTask = ref.putFile(File(filePath));
       TaskSnapshot snapshot = await uploadTask;
 
-      // Obter a URL da imagem armazenada
       String downloadUrl = await snapshot.ref.getDownloadURL();
 
       // Atualizar o campo fotoPerfilUrl no Firestore
@@ -94,7 +91,6 @@ class UserService {
 
   Future<void> updateUserData(User user) async {
     try {
-      // Atualiza o documento do usuário com os dados do objeto User
       await user.uid.update(user.toJson());
       await SessionManager().updateUserInSession();
     } catch (e) {
