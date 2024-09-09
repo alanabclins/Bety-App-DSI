@@ -10,7 +10,7 @@ O principal objetivo do Bety é oferecer uma plataforma intuitiva e personalizad
 
 ### 1. Registro de Glicemia
 - Inserção de medições de glicose por meio de um formulário simples.
-- Armazenamento seguro dos dados no Firebase Firestore.
+- Armazenamento dos dados no Firebase Firestore.
 - Exibição das medições em tempo real na tela principal, com opções de editar e deletar.
 - Edição dos registros através de uma interface intuitiva e funcional.
 
@@ -37,14 +37,4 @@ O principal objetivo do Bety é oferecer uma plataforma intuitiva e personalizad
 
 O aplicativo utiliza JSON para a conversão de dados ao interagir com o Firebase. As entidades, como `Glicemia`, possuem métodos de conversão para transformar os documentos do Firestore em objetos de domínio, facilitando a manipulação dos dados.
 
-## Screenshots
-
-- **Registro de Glicemia**
-  ![Registro de Glicemia](caminho_para_imagem)
-
-- **Gerenciamento de Médicos**
-  ![Gerenciamento de Médicos](caminho_para_imagem)
-
-- **Ponto de Apoio**
-  ![Ponto de Apoio](caminho_para_imagem)
 
