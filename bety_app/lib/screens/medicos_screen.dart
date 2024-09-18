@@ -1,5 +1,5 @@
-import 'package:bety_sprint1/utils/custom_app_bar.dart';
 import 'package:flutter/material.dart';
+import 'package:bety_sprint1/utils/custom_app_bar.dart';
 import 'package:bety_sprint1/models/medico.dart';
 import 'package:bety_sprint1/screens/adicionar_medico_screen.dart';
 import 'package:bety_sprint1/services/session_service.dart';
@@ -12,6 +12,8 @@ class GerenciamentoMedicosPage extends StatefulWidget {
 
 class _GerenciamentoMedicosPageState extends State<GerenciamentoMedicosPage> {
   String? _especialidadeSelecionada;
+  final TextEditingController _especialidadeController =
+      TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -43,23 +45,34 @@ class _GerenciamentoMedicosPageState extends State<GerenciamentoMedicosPage> {
         },
       ),
       body: SingleChildScrollView(
-        // Adicionado para permitir rolagem
         child: Column(
           children: [
             Padding(
               padding: const EdgeInsets.all(16.0),
-              child: DropdownButtonFormField<String>(
+              child: TextFormField(
+                controller: _especialidadeController,
                 decoration: InputDecoration(
                   labelText: 'Filtrar por Especialidade',
                   border: OutlineInputBorder(),
+                  suffixIcon: PopupMenuButton<String>(
+                    icon: Icon(Icons.arrow_drop_down),
+                    onSelected: (String value) {
+                      setState(() {
+                        _especialidadeSelecionada = value;
+                        _especialidadeController.text = value;
+                      });
+                    },
+                    itemBuilder: (BuildContext context) {
+                      return MedicoService.especialidades
+                          .map<PopupMenuItem<String>>((String value) {
+                        return PopupMenuItem(
+                          child: Text(value),
+                          value: value,
+                        );
+                      }).toList();
+                    },
+                  ),
                 ),
-                value: _especialidadeSelecionada,
-                items: MedicoService.especialidades
-                    .map((especialidade) => DropdownMenuItem(
-                          child: Text(especialidade),
-                          value: especialidade,
-                        ))
-                    .toList(),
                 onChanged: (value) {
                   setState(() {
                     _especialidadeSelecionada = value;
@@ -70,17 +83,16 @@ class _GerenciamentoMedicosPageState extends State<GerenciamentoMedicosPage> {
             TextButton(
               onPressed: () {
                 setState(() {
+                  _especialidadeController.clear();
                   _especialidadeSelecionada = null;
                 });
               },
               child: Text('Limpar Filtro'),
             ),
             SizedBox(
-              height: MediaQuery.of(context).size.height *
-                  0.6, // Ajusta a altura disponível
+              height: MediaQuery.of(context).size.height * 0.5,
               child: StreamBuilder<List<Medico>>(
-                stream: MedicoService().getMedicos(user.uid,
-                    especialidade: _especialidadeSelecionada),
+                stream: MedicoService().getMedicos(user.uid),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return Center(child: CircularProgressIndicator());
@@ -94,14 +106,28 @@ class _GerenciamentoMedicosPageState extends State<GerenciamentoMedicosPage> {
                     return Center(child: Text('Nenhum médico encontrado.'));
                   }
 
+                  List<Medico> medicosFiltrados = snapshot.data!;
+
+                  // Filtro por especialidade (digitada ou selecionada)
+                  if (_especialidadeSelecionada != null &&
+                      _especialidadeSelecionada!.isNotEmpty) {
+                    final especialidadeRegExp = RegExp(
+                      _especialidadeSelecionada!,
+                      caseSensitive: false,
+                    );
+                    medicosFiltrados = medicosFiltrados.where((medico) {
+                      return medico.especialidades.any((especialidade) =>
+                          especialidadeRegExp.hasMatch(especialidade));
+                    }).toList();
+                  }
+
                   return ListView.builder(
-                    itemCount: snapshot.data!.length,
+                    itemCount: medicosFiltrados.length,
                     itemBuilder: (context, index) {
-                      final medico = snapshot.data![index];
+                      final medico = medicosFiltrados[index];
 
                       return Dismissible(
-                        key: Key(medico.id?.id ??
-                            ''), // Acessa o ID do DocumentReference como String
+                        key: Key(medico.id?.id ?? ''),
                         direction: DismissDirection.endToStart,
                         confirmDismiss: (direction) async {
                           final bool? confirmed =
@@ -119,8 +145,8 @@ class _GerenciamentoMedicosPageState extends State<GerenciamentoMedicosPage> {
                             borderRadius: BorderRadius.circular(15.0),
                           ),
                           margin: const EdgeInsets.all(12.0),
-                          elevation: 5, // Adiciona sombra ao card
-                          color: Color(0xFF0BAB7C), // Cor de fundo do card
+                          elevation: 5,
+                          color: Color(0xFF0BAB7C),
                           child: ListTile(
                             leading: CircleAvatar(
                               backgroundColor: Colors.white,
@@ -134,7 +160,7 @@ class _GerenciamentoMedicosPageState extends State<GerenciamentoMedicosPage> {
                                 fontFamily: 'Poppins',
                                 fontWeight: FontWeight.bold,
                                 fontSize: 18.0,
-                                color: Color(0xFFFAFAFA), // Cor do texto
+                                color: Color(0xFFFAFAFA),
                               ),
                             ),
                             subtitle: Column(
@@ -144,7 +170,7 @@ class _GerenciamentoMedicosPageState extends State<GerenciamentoMedicosPage> {
                                 Text(
                                   'Telefone: ${medico.telefone}',
                                   style: TextStyle(
-                                    color: Color(0xFFFAFAFA), // Cor do texto
+                                    color: Color(0xFFFAFAFA),
                                     fontSize: 14,
                                   ),
                                 ),
@@ -152,16 +178,14 @@ class _GerenciamentoMedicosPageState extends State<GerenciamentoMedicosPage> {
                                 Text(
                                   'Especialidades: ${medico.especialidades.join(', ')}',
                                   style: TextStyle(
-                                    color: Color(0xFFFAFAFA), // Cor do texto
+                                    color: Color(0xFFFAFAFA),
                                     fontSize: 14,
                                   ),
                                 ),
                               ],
                             ),
                             trailing: IconButton(
-                              icon: Icon(Icons.edit,
-                                  color: Color(
-                                      0xFFFAFAFA)), // Cor do ícone de edição
+                              icon: Icon(Icons.edit, color: Color(0xFFFAFAFA)),
                               onPressed: () {
                                 Navigator.push(
                                   context,
@@ -232,7 +256,6 @@ class _GerenciamentoMedicosPageState extends State<GerenciamentoMedicosPage> {
           TextButton(
             onPressed: () async {
               if (medico.id != null) {
-                // Chama o método deletarMedico passando a referência correta
                 await MedicoService().deletarMedico(medico.id);
               }
               Navigator.of(context).pop(true);
