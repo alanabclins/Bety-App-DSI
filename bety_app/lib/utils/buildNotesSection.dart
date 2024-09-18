@@ -121,6 +121,8 @@ class _NotesSectionState extends State<NotesSection> {
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(20.0),
                               ),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 16.0, vertical: 8.0),
                             ),
                             child: Text(
                               'Ver Imagem',
