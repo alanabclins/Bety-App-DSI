@@ -18,7 +18,7 @@
 
         <!-- Chave da API do Google Maps -->
         <meta-data android:name="com.google.android.geo.API_KEY"
-                   android:value="AIzaSyDIAJ3LarrAyPLWd8AuaUFxAHYb6gbrIXs"/>
+                   android:value="AIzaSyBp13Gbk8UuCsYc_0695bNAUOrWY9kofek"/>
         
         <service
             android:name="com.dexterous.flutterlocalnotifications.BackgroundService"
